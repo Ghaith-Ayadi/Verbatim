@@ -13,7 +13,6 @@ import { useLayout } from "@/lib/layout";
 import { installLifecycleHandlers, setSyncUser, runSync, flushSync } from "@/lib/sync";
 import { startRealtime, stopRealtime } from "@/lib/realtime";
 import { installSearchIndex } from "@/lib/search";
-import { useSession } from "@/lib/auth";
 import { snapshotVersion } from "@/lib/versions";
 
 export default function App() {
@@ -25,21 +24,13 @@ export default function App() {
 }
 
 function Shell() {
-  const { session } = useSession();
   const [route] = useRoute();
   const [layout, , toggleAuthorMode] = useLayout();
 
-  // Wire one-time effects
+  // Auth bypassed for now — sync runs unconditionally.
   useEffect(() => {
     installLifecycleHandlers();
     installSearchIndex();
-  }, []);
-
-  // Re-init sync + realtime when session changes
-  useEffect(() => {
-    if (!session) return;
-    // Single-tenant: pretend the Payload-managed integer id is 1.
-    // The sync engine doesn't filter by user, since this DB belongs to one person.
     setSyncUser(1);
     void runSync();
     startRealtime();
@@ -48,7 +39,7 @@ function Shell() {
       stopRealtime();
       setSyncUser(null);
     };
-  }, [session?.user?.id]);
+  }, []);
 
   useHotkeys("mod+\\", (e) => {
     e.preventDefault();
