@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-bg: #0a0a0a;
+  --color-bg-elev: #131313;
+  --color-bg-hover: #1c1c1c;
+  --color-fg: #fafafa;
+  --color-fg-muted: #a3a3a3;
+  --color-fg-faint: #525252;
+  --color-border: #262626;
+  --color-accent: #fafafa;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Iowan Old Style", "Georgia", "Cambria", "Times New Roman", serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    color-scheme: dark;
+  }
+  ::selection {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+  /* Subtle scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* Editor surface */
+.ProseMirror {
+  outline: none;
+}
