@@ -2,6 +2,14 @@
  * Scoped to .blog-app so the editor's Untitled UI tokens stay intact.
  */
 
+@font-face {
+  font-family: "Roslindale Display";
+  src: url("/fonts/RoslindaleVariableDisplay-VF.ttf") format("truetype-variations");
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
 .blog-app {
   --ink: #000000;
   --ink-2: #1a1a1a;
@@ -14,6 +22,7 @@
   --serif: "Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --ui: "Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --display: "Roslindale Display", "Geist", -apple-system, system-ui, serif;
   --prose-stack: "Charter", "Source Serif 4", "Iowan Old Style", "Apple Garamond",
     Georgia, Cambria, "Times New Roman", Times, serif;
 
@@ -137,6 +146,7 @@
   padding: 80px 40px 56px;
 }
 .blog-hero .manifesto {
+  font-family: var(--display);
   font-size: clamp(28px, 3.4vw, 40px);
   line-height: 1.25;
   letter-spacing: -0.018em;
@@ -254,7 +264,8 @@
   border-bottom: 1px solid var(--rule);
 }
 .blog-col-head h2 {
-  font-weight: 400;
+  font-family: var(--display);
+  font-weight: 500;
   font-size: 40px;
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -303,11 +314,12 @@
   color: var(--ink);
 }
 .blog-post-row .pr-title {
-  font-size: 22px;
-  line-height: 1.25;
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1.2;
   letter-spacing: -0.015em;
   color: var(--ink-2);
-  font-weight: 400;
+  font-weight: 500;
   display: block;
 }
 .blog-post-row .pr-dek {
@@ -426,7 +438,8 @@
   font-weight: 500;
 }
 .blog-article h1 {
-  font-weight: 400;
+  font-family: var(--display);
+  font-weight: 500;
   font-size: clamp(44px, 5.6vw, 64px);
   line-height: 1.02;
   letter-spacing: -0.03em;
