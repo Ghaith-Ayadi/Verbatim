@@ -111,11 +111,12 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
   async function addPost() {
     const peers = await db.posts.where("type").equals(collection.name).toArray();
     const nextSeq = peers.reduce((m, p) => Math.max(m, p.collectionSeq ?? 0), 0) + 1;
+    const { postSlug } = await import("@/lib/postId");
     const { data, error } = await supabase
       .from("posts")
       .insert({
         title: "",
-        slug: String(nextSeq),
+        slug: postSlug(collection.name, nextSeq),
         type: collection.name,
         status: "draft",
         content_md: "",

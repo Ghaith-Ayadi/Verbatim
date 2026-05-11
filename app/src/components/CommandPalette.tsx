@@ -84,10 +84,11 @@ export function CommandPalette({ currentPostId }: Props) {
   }, [q, mode]);
 
   async function newPost(type: string) {
-    // Next sequential id within the collection — `slug` is just that number.
+    // Next sequential id within the collection. Slug = {prefix}·{NN}.
     const peers = await db.posts.where("type").equals(type).toArray();
     const nextSeq = peers.reduce((m, p) => Math.max(m, p.collectionSeq ?? 0), 0) + 1;
-    const slug = String(nextSeq);
+    const { postSlug } = await import("@/lib/postId");
+    const slug = postSlug(type, nextSeq);
     const { data, error } = await supabase
       .from("posts")
       .insert({

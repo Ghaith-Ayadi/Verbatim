@@ -125,7 +125,7 @@ export async function renameCollection(oldName: string, newName: string): Promis
   } else {
     await upsertCollection(newName, {});
   }
-  // Update posts in Supabase first (single SQL update), then mirror locally.
+  // Bulk-update type from old → new in one SQL UPDATE.
   const { error } = await supabase
     .from("posts")
     .update({ type: newName })
@@ -134,11 +134,21 @@ export async function renameCollection(oldName: string, newName: string): Promis
     console.error("renameCollection update posts failed:", error);
     return;
   }
-  // Mirror in Dexie so the UI updates without waiting for the next pull.
+  // Cascade slug rewrites — they encode the collection prefix.
   const affected = await db.posts.where("type").equals(oldName).toArray();
+  const { postSlug } = await import("@/lib/postId");
+  const slugUpdates = affected.map((p) => ({
+    id: p.id,
+    slug: postSlug(newName, p.collectionSeq),
+  }));
+  if (slugUpdates.length) {
+    const { error: slugErr } = await supabase.from("posts").upsert(slugUpdates);
+    if (slugErr) console.error("renameCollection slug rewrite failed:", slugErr);
+  }
+  // Mirror in Dexie so the UI updates without waiting for the next pull.
   await db.transaction("rw", db.posts, async () => {
     for (const p of affected) {
-      await db.posts.put({ ...p, type: newName });
+      await db.posts.put({ ...p, type: newName, slug: postSlug(newName, p.collectionSeq) });
     }
   });
   // Delete the old collection row.

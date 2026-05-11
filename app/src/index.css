@@ -1,9 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
 @import "./styles/globals.css";
 
 /* App-specific tweaks layered on top of Untitled UI. */
 
 @theme {
-  --font-serif: "Iowan Old Style", "Georgia", "Cambria", "Times New Roman", serif;
+  /* Geist everywhere. `--font-inter` is the variable Genesis's @theme uses
+     internally for body + display — pointing it at Geist propagates the
+     change without rewriting the chain. */
+  --font-inter: "Geist";
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+  --font-serif: "Geist", -apple-system, "Segoe UI", sans-serif;
 
   /* App-local aliases onto Untitled UI's semantic tokens, so existing
      Tailwind classes (`bg-bg`, `text-fg`, etc.) keep working. */
