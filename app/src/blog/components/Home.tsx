@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Collection } from "@/types";
 import type { BlogPost } from "@/blog/data";
-import { useBlogRoute } from "@/blog/route";
+import { collectionHref, postHref, useBlogRoute } from "@/blog/route";
 import { Masthead } from "./Masthead";
 import { Hero } from "./Hero";
 import { Colophon } from "./Colophon";
@@ -11,6 +11,8 @@ type SortMode = "latest" | "az";
 interface Props {
   collections: Collection[];
   posts: BlogPost[];
+  /** When the URL is /c/:name, seed the active tab from it. */
+  initialActive: string | null;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -20,14 +22,33 @@ function fmtDate(ms: number | null): string {
   return `${String(d.getDate()).padStart(2, "0")} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export function Home({ collections, posts }: Props) {
+export function Home({ collections, posts, initialActive }: Props) {
   const [, navigate] = useBlogRoute();
   const [sort, setSort] = useState<SortMode>("latest");
-  const [activeName, setActiveName] = useState<string>(() => {
-    // First collection that actually has posts, otherwise first collection.
+
+  // Resolve the active collection from the URL when possible; otherwise pick
+  // the first collection that actually has posts.
+  const fallbackName = useMemo(() => {
     const withPosts = collections.find((c) => posts.some((p) => p.type === c.name));
     return withPosts?.name ?? collections[0]?.name ?? "";
-  });
+  }, [collections, posts]);
+
+  const [activeName, setActiveName] = useState<string>(
+    initialActive && collections.some((c) => c.name === initialActive)
+      ? initialActive
+      : fallbackName,
+  );
+
+  // Tab title and URL stay in sync with the active tab.
+  useEffect(() => {
+    if (!activeName) return;
+    document.title = `${activeName} — Verbatim`;
+  }, [activeName]);
+
+  function selectCollection(name: string) {
+    setActiveName(name);
+    navigate({ view: "collection", name }, { replace: false });
+  }
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -63,15 +84,19 @@ export function Home({ collections, posts }: Props) {
           {collections.map((c) => {
             const display = c.emoji ? `${c.emoji} ${c.name}` : c.name;
             return (
-              <button
+              <a
                 key={c.name}
                 role="tab"
                 aria-selected={c.name === activeName}
                 className="blog-tab"
-                onClick={() => setActiveName(c.name)}
+                href={collectionHref(c.name)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  selectCollection(c.name);
+                }}
               >
                 {display} <span className="count">{counts[c.name] ?? 0}</span>
-              </button>
+              </a>
             );
           })}
           <span className="spacer" />
@@ -113,7 +138,7 @@ export function Home({ collections, posts }: Props) {
             {visible.map((p, i) => (
               <a
                 key={p.id}
-                href={`/p/${encodeURIComponent(p.slug)}`}
+                href={postHref(p.slug)}
                 onClick={(e) => {
                   e.preventDefault();
                   navigate({ view: "post", slug: p.slug });

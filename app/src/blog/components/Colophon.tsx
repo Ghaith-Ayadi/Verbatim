@@ -3,9 +3,7 @@ export function Colophon() {
     <footer className="blog-colophon">
       <div>© MMXXVI — Verbatim</div>
       <div className="right">
-        <a href="/p/colophon">Colophon</a>
-        <a href="/rss.xml">RSS</a>
-        <a href="mailto:hello@example.com">Email</a>
+        <a href="mailto:hello@verbatim.example">Email</a>
       </div>
     </footer>
   );

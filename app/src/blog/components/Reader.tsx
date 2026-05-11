@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { fetchPostBySlug, useBlogData, type BlogPost } from "@/blog/data";
-import { useBlogRoute } from "@/blog/route";
+import { collectionHref, postHref, useBlogRoute } from "@/blog/route";
 import { Colophon } from "./Colophon";
 import { readTime } from "@/lib/format";
 
@@ -30,6 +30,20 @@ function titleWithLastEm(title: string): React.ReactNode {
       <em>{last}</em>
     </>
   );
+}
+
+/**
+ * Replace `[[slug]]` wikilinks with regular markdown links so they render as
+ * real anchors. Resolves against the set of known posts for nicer label text
+ * (uses the target post's title if available, otherwise the raw slug).
+ */
+function resolveWikilinks(md: string, postsBySlug: Map<string, BlogPost>): string {
+  return md.replace(/\[\[([^\[\]\n]+?)\]\]/g, (_, raw: string) => {
+    const slug = raw.trim();
+    const target = postsBySlug.get(slug);
+    const label = target?.title || slug;
+    return `[${label}](${postHref(slug)})`;
+  });
 }
 
 /** First paragraph of body content as a dek fallback. */
@@ -153,6 +167,8 @@ export function Reader({ slug }: Props) {
   const rtMin = readTime(post.wordCount);
   const dek = post.excerpt?.trim() || firstParagraph(post.content);
   const prettyPermalink = `verbatim/${colDisplay.toLowerCase().replace(/\s+/g, "-")}/${post.slug}`;
+  const postsBySlug = new Map(posts.map((p) => [p.slug, p]));
+  const resolvedContent = resolveWikilinks(post.content, postsBySlug);
 
   return (
     <div className="blog-app">
@@ -163,9 +179,16 @@ export function Reader({ slug }: Props) {
           ← Index
         </button>
         <div className="crumb">
-          <span className="col-name">
+          <a
+            href={collectionHref(post.type)}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate({ view: "collection", name: post.type });
+            }}
+            className="col-name"
+          >
             {colEmoji ? `${colEmoji} ${colDisplay}` : colDisplay}
-          </span>
+          </a>
         </div>
         <div className="reader-meta">
           {rtMin > 0 && <span>{rtMin} min read</span>}
@@ -175,7 +198,15 @@ export function Reader({ slug }: Props) {
 
       <article className="blog-article">
         <div className="a-eyebrow">
-          <span>{colDisplay}</span>
+          <a
+            href={collectionHref(post.type)}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate({ view: "collection", name: post.type });
+            }}
+          >
+            {colDisplay}
+          </a>
         </div>
 
         <h1>{titleWithLastEm(post.title)}</h1>
@@ -216,8 +247,25 @@ export function Reader({ slug }: Props) {
             remarkPlugins={[remarkGfm]}
             components={{
               a: ({ href, children, ...rest }) => {
+                if (!href) return <a {...rest}>{children}</a>;
                 const external =
-                  !!href && /^https?:\/\//i.test(href) && !href.includes(window.location.host);
+                  /^https?:\/\//i.test(href) && !href.includes(window.location.host);
+                const internalPost = href.startsWith("/p/");
+                if (internalPost) {
+                  return (
+                    <a
+                      href={href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const slug = decodeURIComponent(href.replace(/^\/p\//, ""));
+                        navigate({ view: "post", slug });
+                      }}
+                      {...rest}
+                    >
+                      {children}
+                    </a>
+                  );
+                }
                 return (
                   <a
                     href={href}
@@ -231,7 +279,7 @@ export function Reader({ slug }: Props) {
               },
             }}
           >
-            {post.content}
+            {resolvedContent}
           </ReactMarkdown>
         </div>
       </article>

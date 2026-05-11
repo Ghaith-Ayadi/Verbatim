@@ -41,5 +41,6 @@ export function BlogApp() {
   if (route.view === "post") {
     return <Reader slug={route.slug} />;
   }
-  return <Home collections={collections} posts={posts} />;
+  const initialActive = route.view === "collection" ? route.name : null;
+  return <Home collections={collections} posts={posts} initialActive={initialActive} />;
 }
