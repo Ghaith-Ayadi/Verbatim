@@ -56,25 +56,42 @@ export function Editor({ post }: Props) {
   }, [editor, post.id]);
 
   const editorRootRef = useRef<HTMLDivElement | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  const [titleVisible, setTitleVisible] = useState(true);
+
+  // When the article title scrolls out of view, the sticky nav switches to
+  // showing the post title in place of just the collection.
+  useEffect(() => {
+    if (!titleRef.current) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setTitleVisible(entry.isIntersecting),
+      { threshold: 0, rootMargin: "-1px 0px 0px 0px" },
+    );
+    io.observe(titleRef.current);
+    return () => io.disconnect();
+  }, [post.id]);
 
   return (
-    <div className="mx-auto w-full max-w-[760px] px-10 py-8">
-      <PostNav post={post} />
-      <input
-        value={post.title}
-        onChange={(e) => void updatePost(post.id, { title: e.target.value })}
-        placeholder="Untitled"
-        className="mb-8 w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
-      />
-      <div ref={editorRootRef} className="w-full">
-        <BlockNoteView editor={editor} theme={theme} />
-        <WikilinkAutocomplete rootRef={editorRootRef} />
+    <div className="mx-auto w-full max-w-[760px] px-10">
+      <PostNav post={post} showTitle={!titleVisible} />
+      <div className="pt-2">
+        <input
+          ref={titleRef}
+          value={post.title}
+          onChange={(e) => void updatePost(post.id, { title: e.target.value })}
+          placeholder="Untitled"
+          className="mb-8 w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
+        />
+        <div ref={editorRootRef} className="w-full pb-24">
+          <BlockNoteView editor={editor} theme={theme} />
+          <WikilinkAutocomplete rootRef={editorRootRef} />
+        </div>
       </div>
     </div>
   );
 }
 
-function PostNav({ post }: { post: Post }) {
+function PostNav({ post, showTitle }: { post: Post; showTitle: boolean }) {
   const peers = useLiveQuery(
     () => db.posts.where("type").equals(post.type).toArray(),
     [post.type],
@@ -112,16 +129,33 @@ function PostNav({ post }: { post: Post }) {
 
   return (
     <>
-      <div className="mb-8 flex items-center justify-between text-xs text-tertiary">
-        <button
-          type="button"
-          onClick={() => go({ view: "list" })}
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 transition hover:bg-primary_hover hover:text-secondary"
-        >
-          <ArrowLeft className="size-3.5" />
-          {display.emoji && <span className="text-sm leading-none">{display.emoji}</span>}
-          <span>{display.label || post.type || "Home"}</span>
-        </button>
+      <div
+        className={[
+          "sticky top-0 z-30 -mx-10 flex items-center justify-between px-10 py-3 text-xs text-tertiary transition-[background,border-color] duration-150",
+          showTitle
+            ? "border-b border-secondary bg-primary/85 backdrop-blur"
+            : "border-b border-transparent bg-transparent",
+        ].join(" ")}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => go({ view: "list" })}
+            className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 transition hover:bg-primary_hover hover:text-secondary"
+          >
+            <ArrowLeft className="size-3.5" />
+            {display.emoji && <span className="text-sm leading-none">{display.emoji}</span>}
+            <span>{display.label || post.type || "Home"}</span>
+          </button>
+          {showTitle && (
+            <>
+              <span className="shrink-0 text-quaternary">/</span>
+              <span className="truncate text-sm text-primary">
+                {post.title || "Untitled"}
+              </span>
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           <span className="date-pill mr-2 text-quaternary">
             #{post.collectionSeq ?? "—"} of {sorted.length}

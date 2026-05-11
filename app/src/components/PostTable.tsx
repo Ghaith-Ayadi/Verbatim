@@ -49,7 +49,7 @@ export function PostTable({ posts, onAddPost }: Props) {
   }, [posts]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-secondary bg-primary">
+    <div className="rounded-xl border border-secondary bg-primary">
       <Toolbar
         filter={filter}
         onFilterChange={setFilter}
@@ -57,8 +57,8 @@ export function PostTable({ posts, onAddPost }: Props) {
         onQueryChange={setQuery}
         counts={counts}
       />
-      <table className="w-full table-fixed border-collapse text-sm">
-        <thead>
+      <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
+        <thead className="sticky top-[57px] z-20">
           <tr>
             <Th className="w-20">ID</Th>
             <Th>Title</Th>
@@ -77,15 +77,17 @@ export function PostTable({ posts, onAddPost }: Props) {
                 onAddPost();
               }
             }}
-            className="cursor-pointer border-b border-secondary text-tertiary outline-none transition hover:bg-secondary hover:text-primary focus:bg-secondary"
+            className="group sticky top-[93px] z-10 cursor-pointer text-tertiary outline-none transition hover:text-primary"
           >
-            <Td>
+            <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary">
               <Plus className="size-4" />
             </Td>
-            <Td className="text-sm">New post</Td>
-            <Td />
-            <Td />
-            <Td />
+            <Td className="bg-primary text-sm group-hover:bg-secondary group-focus:bg-secondary">
+              New post
+            </Td>
+            <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
+            <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
+            <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
           </tr>
           {filtered.map((p) => (
             <tr
@@ -98,7 +100,7 @@ export function PostTable({ posts, onAddPost }: Props) {
                   go({ view: "post", id: p.id });
                 }
               }}
-              className="group cursor-pointer border-b border-secondary text-secondary outline-none transition last:border-b-0 hover:bg-secondary focus:bg-secondary"
+              className="group cursor-pointer text-secondary outline-none transition hover:bg-secondary focus:bg-secondary"
             >
               <Td className="date-pill text-xs text-quaternary">{p.slug || "—"}</Td>
               <Td className="truncate text-sm text-primary">
@@ -199,7 +201,10 @@ function Td({
   ...rest
 }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={["px-4 py-2.5 align-middle", className ?? ""].join(" ")} {...rest}>
+    <td
+      className={["border-t border-secondary px-4 py-2.5 align-middle", className ?? ""].join(" ")}
+      {...rest}
+    >
       {children}
     </td>
   );
@@ -219,7 +224,7 @@ function Toolbar({
   counts: { all: number; draft: number; published: number };
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-secondary px-4 py-3">
+    <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-secondary bg-primary px-4 py-3">
       <div className="flex items-center gap-1 rounded-lg border border-secondary bg-secondary p-0.5">
         <Chip active={filter === "all"} onClick={() => onFilterChange("all")}>
           All <Count n={counts.all} />
