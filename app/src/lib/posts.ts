@@ -85,6 +85,53 @@ export async function toggleFavorite(id: number): Promise<void> {
   await updatePost(id, { favorited: !p.favorited });
 }
 
+/**
+ * Duplicate a post in the same collection. Server assigns a new integer id;
+ * we compute the next collection_seq client-side.
+ */
+export async function duplicatePost(source: import("@/types").Post): Promise<import("@/types").Post | null> {
+  const { supabase } = await import("@/lib/supabase");
+  const { postSlug } = await import("@/lib/postId");
+
+  const peers = await db.posts.where("type").equals(source.type).toArray();
+  const nextSeq = peers.reduce((m, p) => Math.max(m, p.collectionSeq ?? 0), 0) + 1;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .insert({
+      title: source.title ? `${source.title} (copy)` : "",
+      slug: postSlug(source.type, nextSeq),
+      type: source.type,
+      status: "draft",
+      content_md: source.content,
+      collection_seq: nextSeq,
+      category: source.category,
+    })
+    .select()
+    .single();
+  if (error) {
+    console.error("duplicatePost failed:", error);
+    return null;
+  }
+  const post = fromRow(data as PostRow);
+  await db.posts.put({ ...post, syncedAt: Date.now(), dirty: false });
+  return post;
+}
+
+/**
+ * Hard delete. Versions cascade via the DB FK.
+ */
+export async function deletePost(id: number): Promise<void> {
+  const { supabase } = await import("@/lib/supabase");
+  const { error } = await supabase.from("posts").delete().eq("id", id);
+  if (error) {
+    console.error("deletePost failed:", error);
+    return;
+  }
+  await db.posts.delete(id);
+  await db.versions.where("postId").equals(id).delete();
+}
+
 export async function setPostStatus(id: number, status: PostStatus): Promise<void> {
   const before = await db.posts.get(id);
   const patch: Partial<Post> = { status };

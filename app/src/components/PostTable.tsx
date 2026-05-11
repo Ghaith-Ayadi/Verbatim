@@ -4,10 +4,13 @@
 // - Title filter input on the right
 
 import { useMemo, useState } from "react";
-import { Plus, SearchLg } from "@untitledui/icons";
+import { Copy04, DotsHorizontal, Plus, SearchLg, Trash01 } from "@untitledui/icons";
 import type { Post } from "@/types";
 import { go } from "@/lib/route";
 import { formatDate } from "@/lib/format";
+import { deletePost, duplicatePost } from "@/lib/posts";
+import { ActionMenu } from "@/components/Menu";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type StatusFilter = "all" | "draft" | "published";
 
@@ -19,6 +22,7 @@ interface Props {
 export function PostTable({ posts, onAddPost }: Props) {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<Post | null>(null);
 
   const filtered = useMemo(() => {
     let xs = posts;
@@ -60,6 +64,7 @@ export function PostTable({ posts, onAddPost }: Props) {
             <Th>Title</Th>
             <Th className="w-28">Status</Th>
             <Th className="w-36 text-right">Updated</Th>
+            <Th className="w-12" />
           </tr>
         </thead>
         <tbody>
@@ -78,6 +83,7 @@ export function PostTable({ posts, onAddPost }: Props) {
               <Plus className="size-4" />
             </Td>
             <Td className="text-sm">New post</Td>
+            <Td />
             <Td />
             <Td />
           </tr>
@@ -104,12 +110,20 @@ export function PostTable({ posts, onAddPost }: Props) {
               <Td className="date-pill text-right text-xs text-quaternary">
                 {formatDate(p.updatedAt)}
               </Td>
+              <Td
+                className="text-right"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="inline-flex opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                  <PostRowActions post={p} onDelete={() => setConfirmDelete(p)} />
+                </div>
+              </Td>
             </tr>
           ))}
           {filtered.length === 0 && (
             <tr>
               <td
-                colSpan={4}
+                colSpan={5}
                 className="border-b border-secondary px-4 py-8 text-center text-sm text-tertiary last:border-b-0"
               >
                 {query ? "No matches." : "No posts in this filter."}
@@ -118,7 +132,51 @@ export function PostTable({ posts, onAddPost }: Props) {
           )}
         </tbody>
       </table>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={`Delete "${confirmDelete.title || "Untitled"}"?`}
+          message={
+            <>
+              The post and all of its versions will be permanently deleted.
+            </>
+          }
+          confirmLabel="Delete post"
+          destructive
+          onClose={() => setConfirmDelete(null)}
+          onConfirm={() => void deletePost(confirmDelete.id)}
+        />
+      )}
     </div>
+  );
+}
+
+function PostRowActions({
+  post,
+  onDelete,
+}: {
+  post: Post;
+  onDelete: () => void;
+}) {
+  return (
+    <ActionMenu
+      trigger={<DotsHorizontal className="size-4" data-icon />}
+      items={[
+        {
+          id: "duplicate",
+          label: "Duplicate",
+          icon: <Copy04 className="size-4" />,
+          onAction: () => void duplicatePost(post),
+        },
+        {
+          id: "delete",
+          label: "Delete",
+          icon: <Trash01 className="size-4" />,
+          destructive: true,
+          onAction: onDelete,
+        },
+      ]}
+    />
   );
 }
 
@@ -135,9 +193,15 @@ function Th({ children, className }: { children?: React.ReactNode; className?: s
   );
 }
 
-function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
+function Td({
+  children,
+  className,
+  ...rest
+}: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={["px-4 py-2.5 align-middle", className ?? ""].join(" ")}>{children}</td>
+    <td className={["px-4 py-2.5 align-middle", className ?? ""].join(" ")} {...rest}>
+      {children}
+    </td>
   );
 }
 
