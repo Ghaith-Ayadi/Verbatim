@@ -1,7 +1,6 @@
-// Date format used everywhere — "30 Mar, '26" — designed for monospace
-// columns (PostList, history list, attribute panel).
+// Date format used everywhere — "30 MAR 2026" — monospace + tabular figures.
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
 export function formatDate(ms: number | null | undefined): string {
   if (ms == null) return "—";
@@ -9,8 +8,8 @@ export function formatDate(ms: number | null | undefined): string {
   if (Number.isNaN(d.getTime())) return "—";
   const day = String(d.getDate()).padStart(2, "0");
   const mon = MONTHS[d.getMonth()];
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${day} ${mon}, '${yy}`;
+  const yyyy = d.getFullYear();
+  return `${day} ${mon} ${yyyy}`;
 }
 
 export function relativeTime(ms: number): string {
