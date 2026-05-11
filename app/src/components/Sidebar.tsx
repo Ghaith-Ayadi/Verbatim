@@ -4,7 +4,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { db } from "@/lib/db";
 import { postHref } from "@/lib/route";
 import { collectionDisplay } from "@/lib/collections";
-import type { Post } from "@/types";
+import type { Collection, Post } from "@/types";
 
 interface Props {
   currentId: number | null;
@@ -16,21 +16,35 @@ export function Sidebar({ currentId }: Props) {
     [],
     [] as Post[],
   );
+  const collectionRows = useLiveQuery(
+    () => db.collections.orderBy("position").toArray(),
+    [],
+    [] as Collection[],
+  );
 
   const recent = posts.slice(0, 50);
   const favorites = useMemo(() => posts.filter((p) => p.favorited).slice(0, 50), [posts]);
 
-  const collections = useMemo(() => {
+  // Group by the collection.name registry, falling back to a synthetic group
+  // for any post whose `type` doesn't have a row yet.
+  const collectionGroups = useMemo(() => {
     const m = new Map<string, Post[]>();
+    for (const c of collectionRows) m.set(c.name, []);
     for (const p of posts) {
       const key = p.type || "Uncollected";
       if (!m.has(key)) m.set(key, []);
       m.get(key)!.push(p);
     }
+    const knownOrder = new Map(collectionRows.map((c, i) => [c.name, i]));
     return [...m.entries()]
       .map(([name, items]) => ({ name, items }))
-      .sort((a, b) => b.items.length - a.items.length);
-  }, [posts]);
+      .sort((a, b) => {
+        const ai = knownOrder.get(a.name) ?? Number.POSITIVE_INFINITY;
+        const bi = knownOrder.get(b.name) ?? Number.POSITIVE_INFINITY;
+        if (ai !== bi) return ai - bi;
+        return b.items.length - a.items.length;
+      });
+  }, [posts, collectionRows]);
 
   return (
     <aside className="flex h-full w-[220px] flex-col border-r border-secondary bg-secondary">
@@ -38,14 +52,14 @@ export function Sidebar({ currentId }: Props) {
       <div className="flex-1 overflow-y-auto py-2">
         {favorites.length > 0 && (
           <Group label="Favorites">
-            <PostList posts={favorites} currentId={currentId} />
+            <PostList posts={favorites} currentId={currentId} collectionRows={collectionRows} />
           </Group>
         )}
         <Group label="Recent" defaultOpen>
-          <VirtualPostList posts={recent} currentId={currentId} />
+          <VirtualPostList posts={recent} currentId={currentId} collectionRows={collectionRows} />
         </Group>
-        {collections.map((c) => {
-          const d = collectionDisplay(c.name);
+        {collectionGroups.map((c) => {
+          const d = collectionDisplay(c.name, collectionRows);
           return (
             <Group
               key={c.name}
@@ -53,7 +67,7 @@ export function Sidebar({ currentId }: Props) {
               emoji={d.emoji}
               count={c.items.length}
             >
-              <PostList posts={c.items} currentId={currentId} />
+              <PostList posts={c.items} currentId={currentId} collectionRows={collectionRows} />
             </Group>
           );
         })}
@@ -108,17 +122,33 @@ function Group({
   );
 }
 
-function PostList({ posts, currentId }: { posts: Post[]; currentId: number | null }) {
+function PostList({
+  posts,
+  currentId,
+  collectionRows,
+}: {
+  posts: Post[];
+  currentId: number | null;
+  collectionRows: Collection[];
+}) {
   return (
     <ul>
       {posts.map((p) => (
-        <PostRow key={p.id} post={p} active={p.id === currentId} />
+        <PostRow key={p.id} post={p} active={p.id === currentId} collectionRows={collectionRows} />
       ))}
     </ul>
   );
 }
 
-function VirtualPostList({ posts, currentId }: { posts: Post[]; currentId: number | null }) {
+function VirtualPostList({
+  posts,
+  currentId,
+  collectionRows,
+}: {
+  posts: Post[];
+  currentId: number | null;
+  collectionRows: Collection[];
+}) {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const virtual = useVirtualizer({
     count: posts.length,
@@ -143,7 +173,7 @@ function VirtualPostList({ posts, currentId }: { posts: Post[]; currentId: numbe
                 transform: `translateY(${vi.start}px)`,
               }}
             >
-              <PostRow post={p} active={p.id === currentId} />
+              <PostRow post={p} active={p.id === currentId} collectionRows={collectionRows} />
             </div>
           );
         })}
@@ -152,9 +182,17 @@ function VirtualPostList({ posts, currentId }: { posts: Post[]; currentId: numbe
   );
 }
 
-function PostRow({ post, active }: { post: Post; active: boolean }) {
+function PostRow({
+  post,
+  active,
+  collectionRows,
+}: {
+  post: Post;
+  active: boolean;
+  collectionRows: Collection[];
+}) {
   const title = post.title || "Untitled";
-  const d = collectionDisplay(post.type);
+  const d = collectionDisplay(post.type, collectionRows);
   return (
     <a
       href={postHref(post.id)}

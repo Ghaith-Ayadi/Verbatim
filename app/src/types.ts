@@ -22,10 +22,15 @@ export interface Post {
   dirty?: boolean;
 }
 
-export interface CollectionMeta {
+export interface Collection {
   name: string;
-  color: string;
+  emoji: string | null;
+  description: string | null;
+  position: number;
+  createdAt: number;
   updatedAt: number;
+  syncedAt?: number | null;
+  dirty?: boolean;
 }
 
 export interface PostVersion {

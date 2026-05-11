@@ -10,7 +10,7 @@ import { go } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
 import { collectionDisplay } from "@/lib/collections";
 import { fromRow, setPostStatus, type PostRow } from "@/lib/posts";
-import type { Post } from "@/types";
+import type { Collection, Post } from "@/types";
 
 type Mode = "search" | "commands";
 
@@ -32,11 +32,15 @@ export function CommandPalette({ currentPostId }: Props) {
     [],
     [] as Post[],
   );
-  const knownCollections = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of allPosts) if (p.type) s.add(p.type);
-    return [...s].sort();
-  }, [allPosts]);
+  const collectionRows = useLiveQuery(
+    () => db.collections.orderBy("position").toArray(),
+    [],
+    [] as Collection[],
+  );
+  const knownCollections = useMemo(
+    () => collectionRows.map((c) => c.name),
+    [collectionRows],
+  );
 
   const defaultCollection = useMemo(() => {
     if (currentPostId != null) {
@@ -114,7 +118,7 @@ export function CommandPalette({ currentPostId }: Props) {
   };
 
   const otherCollections = knownCollections.filter((c) => c !== defaultCollection);
-  const defaultDisplay = collectionDisplay(defaultCollection);
+  const defaultDisplay = collectionDisplay(defaultCollection, collectionRows);
 
   const allCommands: CommandRow[] = [
     {
@@ -128,7 +132,7 @@ export function CommandPalette({ currentPostId }: Props) {
       onSelect: () => void newPost(defaultCollection),
     },
     ...otherCollections.map<CommandRow>((c) => {
-      const d = collectionDisplay(c);
+      const d = collectionDisplay(c, collectionRows);
       return {
         key: `new-${c}`,
         label: `New post in ${d.label || c}`,
@@ -225,7 +229,7 @@ export function CommandPalette({ currentPostId }: Props) {
                   const id = Number(r.id);
                   const status = (r as unknown as { status?: string | null }).status;
                   const type = (r as unknown as { type?: string }).type;
-                  const emoji = type ? collectionDisplay(type).emoji : null;
+                  const emoji = type ? collectionDisplay(type, collectionRows).emoji : null;
                   return (
                     <Item
                       key={r.id}

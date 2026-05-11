@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { CollectionMeta, Post, PostVersion } from "@/types";
+import type { Collection, Post, PostVersion } from "@/types";
 
 interface SyncMetaRow {
   key: string;
@@ -9,7 +9,7 @@ interface SyncMetaRow {
 class VerbatimDB extends Dexie {
   posts!: Table<Post, number>;
   versions!: Table<PostVersion, string>;
-  collectionMeta!: Table<CollectionMeta, string>;
+  collections!: Table<Collection, string>;
   syncMeta!: Table<SyncMetaRow, string>;
 
   constructor() {
@@ -23,7 +23,7 @@ class VerbatimDB extends Dexie {
       syncMeta: "key",
     });
 
-    // v2: collections dropped — type IS the collection.
+    // v2: collections dropped — `type` carried the identity.
     this.version(2).stores({
       posts: "id, slug, status, type, favorited, updatedAt, publishedAt",
       collections: null,
@@ -31,11 +31,20 @@ class VerbatimDB extends Dexie {
       syncMeta: "key",
     });
 
-    // v3: per-collection metadata (color, etc.)
+    // v3: ephemeral collectionMeta (color-only); never shipped.
     this.version(3).stores({
       posts: "id, slug, status, type, favorited, updatedAt, publishedAt",
       versions: "id, postId, [postId+version], createdAt",
       collectionMeta: "name, updatedAt",
+      syncMeta: "key",
+    });
+
+    // v4: real `collections` with name PK + emoji + description + position.
+    this.version(4).stores({
+      posts: "id, slug, status, type, favorited, updatedAt, publishedAt",
+      versions: "id, postId, [postId+version], createdAt",
+      collectionMeta: null,
+      collections: "name, position, updatedAt",
       syncMeta: "key",
     });
   }

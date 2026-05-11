@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Star01 } from "@untitledui/icons";
 import { db } from "@/lib/db";
-import type { Post, PostVersion } from "@/types";
+import type { Collection, Post, PostVersion } from "@/types";
 import { setPostStatus, toggleFavorite, updatePost } from "@/lib/posts";
 import { collectionDisplay } from "@/lib/collections";
 import { DiffModal } from "@/components/DiffModal";
@@ -15,30 +15,29 @@ interface Props {
 }
 
 export function AttributePanel({ post }: Props) {
-  const allPosts = useLiveQuery(() => db.posts.toArray(), [], [] as Post[]);
+  const collectionRows = useLiveQuery(
+    () => db.collections.orderBy("position").toArray(),
+    [],
+    [] as Collection[],
+  );
   const versions = useLiveQuery(
     () => db.versions.where("postId").equals(post.id).reverse().sortBy("version"),
     [post.id],
     [] as PostVersion[],
   );
-  const collections = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of allPosts) if (p.type) s.add(p.type);
-    return [...s].sort();
-  }, [allPosts]);
 
   const [diffFor, setDiffFor] = useState<PostVersion | null>(null);
 
   const collectionItems = useMemo(
     () =>
-      collections.map((c) => {
-        const d = collectionDisplay(c);
+      collectionRows.map((c) => {
+        const d = collectionDisplay(c.name, collectionRows);
         return {
-          id: c,
-          label: d.emoji ? `${d.emoji}  ${d.label || c}` : c,
+          id: c.name,
+          label: d.emoji ? `${d.emoji}  ${d.label || c.name}` : c.name,
         };
       }),
-    [collections],
+    [collectionRows],
   );
   const statusItems = [
     { id: "draft", label: "Draft" },
@@ -66,7 +65,7 @@ export function AttributePanel({ post }: Props) {
           {(item) => <Select.Item id={item.id} label={item.label} />}
         </Select>
         <p className="mt-1.5 text-[11px] text-quaternary">
-          Prefix the name with an emoji to give the collection an icon.
+          Edit the collection's name, emoji and description from the home tab.
         </p>
       </FieldStack>
 

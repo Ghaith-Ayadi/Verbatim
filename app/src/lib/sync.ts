@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { fromRow, toRow, type PostRow } from "@/lib/posts";
 import { pullAllVersions } from "@/lib/versions";
+import { fromCollectionRow } from "@/lib/collections";
 
 const LAST_PULL_KEY = "lastPullIso";
 const DEBOUNCE_MS = 2000;
@@ -49,6 +50,7 @@ export async function runSync(): Promise<void> {
     await pushPending();
     await pullChanges();
     await pullAllVersions();
+    await pullCollections();
     onSyncComplete?.();
   } catch (err) {
     console.error("Sync failed:", err);
@@ -107,6 +109,30 @@ async function pullChanges(): Promise<void> {
     }
   });
   await db.syncMeta.put({ key: LAST_PULL_KEY, value: maxIso });
+}
+
+async function pullCollections(): Promise<void> {
+  const meta = await db.syncMeta.get("lastCollectionsPullIso");
+  const cursor = typeof meta?.value === "string" ? meta.value : "1970-01-01T00:00:00.000Z";
+  const { data, error } = await supabase
+    .from("collections")
+    .select("*")
+    .gt("updated_at", cursor)
+    .order("updated_at", { ascending: true });
+  if (error) {
+    console.error("Pull collections failed:", error);
+    return;
+  }
+  if (!data?.length) return;
+  let maxIso = cursor;
+  await db.transaction("rw", db.collections, async () => {
+    for (const raw of data) {
+      const row = raw as Parameters<typeof fromCollectionRow>[0];
+      if (row.updated_at > maxIso) maxIso = row.updated_at;
+      await db.collections.put({ ...fromCollectionRow(row), syncedAt: Date.now(), dirty: false });
+    }
+  });
+  await db.syncMeta.put({ key: "lastCollectionsPullIso", value: maxIso });
 }
 
 export async function resetSyncState() {

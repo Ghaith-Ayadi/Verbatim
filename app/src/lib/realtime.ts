@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { fromRow, type PostRow } from "@/lib/posts";
 import { fromVersionRow } from "@/lib/versions";
+import { fromCollectionRow } from "@/lib/collections";
 import { runSync } from "@/lib/sync";
 
 let channel: RealtimeChannel | null = null;
@@ -38,6 +39,24 @@ export function startRealtime() {
         const row = payload.new as Parameters<typeof fromVersionRow>[0];
         if (!row?.id) return;
         await db.versions.put(fromVersionRow(row));
+      },
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "collections" },
+      async (payload) => {
+        if (payload.eventType === "DELETE") {
+          const old = payload.old as { name?: string };
+          if (old.name) await db.collections.delete(old.name);
+          return;
+        }
+        const row = payload.new as Parameters<typeof fromCollectionRow>[0];
+        if (!row?.name) return;
+        await db.collections.put({
+          ...fromCollectionRow(row),
+          syncedAt: Date.now(),
+          dirty: false,
+        });
       },
     )
     .subscribe((status) => {

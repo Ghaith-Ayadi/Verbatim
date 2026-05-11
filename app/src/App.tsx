@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Editor } from "@/components/Editor";
 import { AttributePanel } from "@/components/AttributePanel";
 import { CommandPalette } from "@/components/CommandPalette";
-import { PostListView } from "@/components/PostListView";
+import { CollectionTabs } from "@/components/CollectionTabs";
 import { db } from "@/lib/db";
 import { useRoute } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
@@ -64,7 +64,7 @@ function Shell() {
     <div className="flex h-screen w-screen overflow-hidden">
       {layout.sidebar && <Sidebar currentId={route.view === "post" ? route.id : null} />}
       <main className="flex-1 overflow-y-auto">
-        {route.view === "list" && <PostListView />}
+        {route.view === "list" && <CollectionTabs />}
         {route.view === "post" && !currentPost && (
           <div className="flex h-full items-center justify-center text-fg-faint">
             Post not found.
