@@ -9,7 +9,6 @@ import { db } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { fromRow, toRow, type PostRow } from "@/lib/posts";
 import { pullAllVersions } from "@/lib/versions";
-import { rememberColor } from "@/lib/colors";
 
 const LAST_PULL_KEY = "lastPullIso";
 const DEBOUNCE_MS = 2000;
@@ -50,7 +49,6 @@ export async function runSync(): Promise<void> {
     await pushPending();
     await pullChanges();
     await pullAllVersions();
-    await pullCollectionMeta();
     onSyncComplete?.();
   } catch (err) {
     console.error("Sync failed:", err);
@@ -109,41 +107,6 @@ async function pullChanges(): Promise<void> {
     }
   });
   await db.syncMeta.put({ key: LAST_PULL_KEY, value: maxIso });
-}
-
-interface CollectionMetaRow {
-  name: string;
-  color: string;
-  updated_at: string;
-}
-
-async function pullCollectionMeta(): Promise<void> {
-  const meta = await db.syncMeta.get("lastCollectionMetaPullIso");
-  const cursor = typeof meta?.value === "string" ? meta.value : "1970-01-01T00:00:00.000Z";
-  const { data, error } = await supabase
-    .from("collection_meta")
-    .select("*")
-    .gt("updated_at", cursor)
-    .order("updated_at", { ascending: true });
-  if (error) {
-    console.error("Pull collection_meta failed:", error);
-    return;
-  }
-  if (!data?.length) return;
-  let maxIso = cursor;
-  await db.transaction("rw", db.collectionMeta, async () => {
-    for (const raw of data) {
-      const r = raw as CollectionMetaRow;
-      if (r.updated_at > maxIso) maxIso = r.updated_at;
-      await db.collectionMeta.put({
-        name: r.name,
-        color: r.color,
-        updatedAt: new Date(r.updated_at).getTime(),
-      });
-      rememberColor(r.name, r.color);
-    }
-  });
-  await db.syncMeta.put({ key: "lastCollectionMetaPullIso", value: maxIso });
 }
 
 export async function resetSyncState() {

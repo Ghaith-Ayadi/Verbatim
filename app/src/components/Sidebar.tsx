@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { db } from "@/lib/db";
 import { postHref } from "@/lib/route";
-import { collectionColor, useColorVersion } from "@/lib/colors";
+import { collectionDisplay } from "@/lib/collections";
 import type { Post } from "@/types";
 
 interface Props {
@@ -11,7 +11,6 @@ interface Props {
 }
 
 export function Sidebar({ currentId }: Props) {
-  useColorVersion();
   const posts = useLiveQuery(
     () => db.posts.orderBy("updatedAt").reverse().toArray(),
     [],
@@ -21,7 +20,6 @@ export function Sidebar({ currentId }: Props) {
   const recent = posts.slice(0, 50);
   const favorites = useMemo(() => posts.filter((p) => p.favorited).slice(0, 50), [posts]);
 
-  // Group by collection (== posts.type)
   const collections = useMemo(() => {
     const m = new Map<string, Post[]>();
     for (const p of posts) {
@@ -35,7 +33,7 @@ export function Sidebar({ currentId }: Props) {
   }, [posts]);
 
   return (
-    <aside className="flex h-full w-[220px] flex-col border-r border-border bg-bg-elev">
+    <aside className="flex h-full w-[220px] flex-col border-r border-secondary bg-secondary">
       <Header />
       <div className="flex-1 overflow-y-auto py-2">
         {favorites.length > 0 && (
@@ -46,16 +44,19 @@ export function Sidebar({ currentId }: Props) {
         <Group label="Recent" defaultOpen>
           <VirtualPostList posts={recent} currentId={currentId} />
         </Group>
-        {collections.map((c) => (
-          <Group
-            key={c.name}
-            label={c.name}
-            count={c.items.length}
-            color={collectionColor(c.name)}
-          >
-            <PostList posts={c.items} currentId={currentId} />
-          </Group>
-        ))}
+        {collections.map((c) => {
+          const d = collectionDisplay(c.name);
+          return (
+            <Group
+              key={c.name}
+              label={d.label || c.name}
+              emoji={d.emoji}
+              count={c.items.length}
+            >
+              <PostList posts={c.items} currentId={currentId} />
+            </Group>
+          );
+        })}
       </div>
       <Footer total={posts.length} />
     </aside>
@@ -65,15 +66,15 @@ export function Sidebar({ currentId }: Props) {
 function Header() {
   return (
     <div className="flex items-center justify-between px-3 pt-3 pb-2">
-      <a href="#/" className="font-serif text-lg italic">Verbatim</a>
-      <span className="text-[11px] text-fg-faint">⌘K</span>
+      <a href="#/" className="font-serif text-lg italic text-primary">Verbatim</a>
+      <span className="text-[11px] text-quaternary">⌘K</span>
     </div>
   );
 }
 
 function Footer({ total }: { total: number }) {
   return (
-    <div className="border-t border-border px-3 py-2 text-[11px] text-fg-faint">
+    <div className="border-t border-secondary px-3 py-2 text-[11px] text-quaternary">
       {total} {total === 1 ? "post" : "posts"}
     </div>
   );
@@ -84,29 +85,23 @@ function Group({
   children,
   defaultOpen = false,
   count,
-  color,
+  emoji,
 }: {
   label: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
   count?: number;
-  color?: string;
+  emoji?: string | null;
 }) {
   return (
     <details className="group/section" open={defaultOpen}>
-      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-1 text-[11px] uppercase tracking-wide text-fg-faint hover:text-fg-muted">
+      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-quaternary hover:text-secondary">
         <span className="flex items-center gap-1.5">
           <span className="inline-block transition group-open/section:rotate-90">›</span>
-          {color && (
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-          )}
-          {label}
+          {emoji && <span className="text-[13px] leading-none">{emoji}</span>}
+          <span>{label}</span>
         </span>
-        {count != null && <span className="text-fg-faint">{count}</span>}
+        {count != null && <span className="text-quaternary">{count}</span>}
       </summary>
       <div className="mb-2">{children}</div>
     </details>
@@ -159,22 +154,22 @@ function VirtualPostList({ posts, currentId }: { posts: Post[]; currentId: numbe
 
 function PostRow({ post, active }: { post: Post; active: boolean }) {
   const title = post.title || "Untitled";
-  const dotColor = post.type ? collectionColor(post.type) : "transparent";
+  const d = collectionDisplay(post.type);
   return (
     <a
       href={postHref(post.id)}
       className={[
         "flex items-center gap-2 truncate px-3 py-1 text-sm",
-        active ? "bg-bg-hover text-fg" : "text-fg-muted hover:bg-bg-hover hover:text-fg",
+        active
+          ? "bg-primary_hover text-primary"
+          : "text-secondary hover:bg-primary_hover hover:text-primary",
       ].join(" ")}
       title={post.type ? `${title} · ${post.type}` : title}
     >
-      <span
-        aria-hidden
-        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: dotColor }}
-      />
-      {post.status === "draft" && <span className="text-fg-faint">●</span>}
+      <span className="inline-block w-4 shrink-0 text-center text-[13px] leading-none">
+        {d.emoji ?? ""}
+      </span>
+      {post.status === "draft" && <span className="text-quaternary">●</span>}
       <span className="truncate">{title}</span>
     </a>
   );

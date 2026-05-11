@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { search, subscribeSearch } from "@/lib/search";
 import { go } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
-import { collectionColor, useColorVersion } from "@/lib/colors";
+import { collectionDisplay } from "@/lib/collections";
 import { fromRow, setPostStatus, type PostRow } from "@/lib/posts";
 import type { Post } from "@/types";
 
@@ -21,10 +21,8 @@ interface Props {
 const LAST_COLLECTION_KEY = "verbatim:lastCollection";
 
 export function CommandPalette({ currentPostId }: Props) {
-  useColorVersion();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  // Empty query OR leading "/" → commands. Anything else → search.
   const mode: Mode = q.length === 0 || q.startsWith("/") ? "commands" : "search";
   const commandQuery = q.startsWith("/") ? q.slice(1).trim().toLowerCase() : "";
   const [, , toggleAuthorMode] = useLayout();
@@ -40,18 +38,13 @@ export function CommandPalette({ currentPostId }: Props) {
     return [...s].sort();
   }, [allPosts]);
 
-  // Default collection for a quick ⌘K → Enter new post:
-  //   1. Currently-open post's type
-  //   2. Last collection the user wrote in (localStorage)
-  //   3. Most-recently updated post's type
-  //   4. First known collection
-  //   5. Hard fallback
   const defaultCollection = useMemo(() => {
     if (currentPostId != null) {
       const cur = allPosts.find((p) => p.id === currentPostId);
       if (cur?.type) return cur.type;
     }
-    const remembered = typeof localStorage !== "undefined" ? localStorage.getItem(LAST_COLLECTION_KEY) : null;
+    const remembered =
+      typeof localStorage !== "undefined" ? localStorage.getItem(LAST_COLLECTION_KEY) : null;
     if (remembered && knownCollections.includes(remembered)) return remembered;
     if (allPosts[0]?.type) return allPosts[0].type;
     if (knownCollections[0]) return knownCollections[0];
@@ -111,42 +104,47 @@ export function CommandPalette({ currentPostId }: Props) {
     setOpen(false);
   }
 
-  // Build the full command list, then manually filter by commandQuery.
-  // The first matching item is what cmdk auto-highlights, so we put the
-  // primary "New post in {default}" first.
   type CommandRow = {
     key: string;
     label: string;
-    color?: string;
+    emoji?: string | null;
     icon?: React.ReactNode;
     hint?: string;
     onSelect: () => void;
   };
 
   const otherCollections = knownCollections.filter((c) => c !== defaultCollection);
+  const defaultDisplay = collectionDisplay(defaultCollection);
 
   const allCommands: CommandRow[] = [
     {
       key: "new-default",
-      label: `New post${defaultCollection ? ` in ${defaultCollection}` : ""}`,
-      color: defaultCollection ? collectionColor(defaultCollection) : undefined,
+      label: defaultCollection
+        ? `New post in ${defaultDisplay.label || defaultCollection}`
+        : "New post",
+      emoji: defaultDisplay.emoji,
       icon: <FilePlus02 className="size-4" />,
       hint: "⌘⇧N",
       onSelect: () => void newPost(defaultCollection),
     },
-    ...otherCollections.map<CommandRow>((c) => ({
-      key: `new-${c}`,
-      label: `New post in ${c}`,
-      color: collectionColor(c),
-      icon: <FilePlus02 className="size-4" />,
-      onSelect: () => void newPost(c),
-    })),
+    ...otherCollections.map<CommandRow>((c) => {
+      const d = collectionDisplay(c);
+      return {
+        key: `new-${c}`,
+        label: `New post in ${d.label || c}`,
+        emoji: d.emoji,
+        icon: <FilePlus02 className="size-4" />,
+        onSelect: () => void newPost(c),
+      };
+    }),
     {
       key: "new-collection",
       label: "New post in new collection…",
       icon: <FilePlus02 className="size-4" />,
       onSelect: () => {
-        const name = window.prompt("New collection name");
+        const name = window.prompt(
+          "New collection name — prefix with an emoji to give it an icon",
+        );
         if (name) void newPost(name.trim());
       },
     },
@@ -212,7 +210,7 @@ export function CommandPalette({ currentPostId }: Props) {
                   <Item
                     key={c.key}
                     label={c.label}
-                    color={c.color}
+                    emoji={c.emoji ?? undefined}
                     icon={c.icon}
                     hint={c.hint}
                     onSelect={c.onSelect}
@@ -227,11 +225,12 @@ export function CommandPalette({ currentPostId }: Props) {
                   const id = Number(r.id);
                   const status = (r as unknown as { status?: string | null }).status;
                   const type = (r as unknown as { type?: string }).type;
+                  const emoji = type ? collectionDisplay(type).emoji : null;
                   return (
                     <Item
                       key={r.id}
                       label={String((r as unknown as { title?: string }).title || "Untitled")}
-                      color={type ? collectionColor(type) : undefined}
+                      emoji={emoji ?? undefined}
                       hint={status === "draft" ? "draft" : undefined}
                       onSelect={() => {
                         go({ view: "post", id });
@@ -251,7 +250,6 @@ export function CommandPalette({ currentPostId }: Props) {
   );
 }
 
-// Lightweight subsequence match: chars of `q` appear in order inside `label`.
 function fuzzyMatch(label: string, q: string): boolean {
   const haystack = label.toLowerCase();
   if (haystack.includes(q)) return true;
@@ -302,13 +300,13 @@ function Item({
   label,
   hint,
   onSelect,
-  color,
+  emoji,
   icon,
 }: {
   label: string;
   hint?: string;
   onSelect: () => void;
-  color?: string;
+  emoji?: string;
   icon?: React.ReactNode;
 }) {
   return (
@@ -317,14 +315,15 @@ function Item({
       className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-secondary transition aria-selected:bg-primary_hover aria-selected:text-primary"
     >
       <span className="flex min-w-0 items-center gap-2.5">
-        {color && (
-          <span
-            aria-hidden
-            className="inline-block h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: color }}
-          />
+        {emoji ? (
+          <span className="inline-block w-4 shrink-0 text-center text-base leading-none">
+            {emoji}
+          </span>
+        ) : icon ? (
+          <span className="shrink-0 text-quaternary">{icon}</span>
+        ) : (
+          <span className="w-4 shrink-0" />
         )}
-        {!color && icon && <span className="shrink-0 text-quaternary">{icon}</span>}
         <span className="truncate">{label}</span>
       </span>
       {hint && <span className="shrink-0 text-xs text-quaternary">{hint}</span>}

@@ -13,7 +13,6 @@ import { useLayout } from "@/lib/layout";
 import { installLifecycleHandlers, setSyncUser, runSync, flushSync } from "@/lib/sync";
 import { startRealtime, stopRealtime } from "@/lib/realtime";
 import { installSearchIndex } from "@/lib/search";
-import { installColorOverrides } from "@/lib/colors";
 import { snapshotVersion } from "@/lib/versions";
 
 export default function App() {
@@ -32,7 +31,6 @@ function Shell() {
   useEffect(() => {
     installLifecycleHandlers();
     installSearchIndex();
-    void installColorOverrides();
     setSyncUser(1);
     void runSync();
     startRealtime();

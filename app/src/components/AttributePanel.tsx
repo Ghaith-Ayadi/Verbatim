@@ -4,9 +4,8 @@ import { Star01 } from "@untitledui/icons";
 import { db } from "@/lib/db";
 import type { Post, PostVersion } from "@/types";
 import { setPostStatus, toggleFavorite, updatePost } from "@/lib/posts";
-import { useColorVersion } from "@/lib/colors";
+import { collectionDisplay } from "@/lib/collections";
 import { DiffModal } from "@/components/DiffModal";
-import { ColorPicker } from "@/components/ColorPicker";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
@@ -16,7 +15,6 @@ interface Props {
 }
 
 export function AttributePanel({ post }: Props) {
-  useColorVersion();
   const allPosts = useLiveQuery(() => db.posts.toArray(), [], [] as Post[]);
   const versions = useLiveQuery(
     () => db.versions.where("postId").equals(post.id).reverse().sortBy("version"),
@@ -33,7 +31,13 @@ export function AttributePanel({ post }: Props) {
 
   const collectionItems = useMemo(
     () =>
-      collections.map((c) => ({ id: c, label: c })),
+      collections.map((c) => {
+        const d = collectionDisplay(c);
+        return {
+          id: c,
+          label: d.emoji ? `${d.emoji}  ${d.label || c}` : c,
+        };
+      }),
     [collections],
   );
   const statusItems = [
@@ -52,22 +56,18 @@ export function AttributePanel({ post }: Props) {
       </FieldStack>
 
       <FieldStack label="Collection">
-        <div className="flex items-center gap-2">
-          {post.type ? <ColorPicker collection={post.type} /> : (
-            <span aria-hidden className="inline-block h-4 w-4 rounded-full bg-tertiary_alt" />
-          )}
-          <div className="flex-1">
-            <Select
-              size="sm"
-              selectedKey={post.type ?? null}
-              onSelectionChange={(k) => void updatePost(post.id, { type: String(k ?? "") })}
-              items={collectionItems}
-              placeholder="—"
-            >
-              {(item) => <Select.Item id={item.id} label={item.label} />}
-            </Select>
-          </div>
-        </div>
+        <Select
+          size="sm"
+          selectedKey={post.type ?? null}
+          onSelectionChange={(k) => void updatePost(post.id, { type: String(k ?? "") })}
+          items={collectionItems}
+          placeholder="—"
+        >
+          {(item) => <Select.Item id={item.id} label={item.label} />}
+        </Select>
+        <p className="mt-1.5 text-[11px] text-quaternary">
+          Prefix the name with an emoji to give the collection an icon.
+        </p>
       </FieldStack>
 
       <FieldStack label="Status">
@@ -141,19 +141,10 @@ export function AttributePanel({ post }: Props) {
   );
 }
 
-function FieldStack({
-  label,
-  children,
-  leading,
-}: {
-  label: string;
-  children: React.ReactNode;
-  leading?: React.ReactNode;
-}) {
+function FieldStack({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-quaternary">
-        {leading}
+      <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-quaternary">
         {label}
       </div>
       {children}
