@@ -7,6 +7,7 @@ import { Editor } from "@/components/Editor";
 import { AttributePanel } from "@/components/AttributePanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CollectionTabs } from "@/components/CollectionTabs";
+import { HelpFab } from "@/components/HelpFab";
 import { db } from "@/lib/db";
 import { useRoute } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
@@ -85,6 +86,7 @@ function Shell() {
         <AttributePanel post={currentPost} />
       )}
       <CommandPalette currentPostId={currentPost?.id ?? null} />
+      <HelpFab />
     </div>
   );
 }
