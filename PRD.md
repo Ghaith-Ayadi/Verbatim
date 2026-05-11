@@ -48,7 +48,7 @@ Non-goals (Phase 1):
                        │ supabase-js (postgrest + auth + realtime)
                        ▼
 ┌──────────────────────────────────────────────────────────┐
-│  Supabase (existing project: REDACTED_PROJECT_REF)       │
+│  Supabase (existing project, ref in .env.local)          │
 │  ┌─ public.posts             (existing, content → MD)    │
 │  ├─ public.post_versions     (new, append-only)          │
 │  ├─ public.collections       (new, sidebar groups)       │

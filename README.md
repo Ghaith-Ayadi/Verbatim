@@ -56,7 +56,7 @@ The blog (a separate Next.js + Payload project) reads the same Supabase rows —
                       │ supabase-js (postgrest + realtime + storage)
                       ▼
 ┌──────────────────────────────────────────────────────────┐
-│  Supabase project `REDACTED_PROJECT_REF`                 │
+│  Supabase project (configured via VITE_SUPABASE_URL)     │
 │   ├─ public.posts          (Payload-managed + content_md │
 │   │                         + collection_seq + favorited)│
 │   ├─ public.collections    (name PK, emoji, description) │
