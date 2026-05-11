@@ -7,9 +7,11 @@ import { Editor } from "@/components/Editor";
 import { AttributePanel } from "@/components/AttributePanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CollectionTabs } from "@/components/CollectionTabs";
+import { CollectionTabBar } from "@/components/CollectionTabBar";
 import { db } from "@/lib/db";
 import { useRoute } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
+import { useActiveCollection } from "@/lib/activeCollection";
 import { installLifecycleHandlers, setSyncUser, runSync, flushSync } from "@/lib/sync";
 import { startRealtime, stopRealtime } from "@/lib/realtime";
 import { installSearchIndex } from "@/lib/search";
@@ -51,6 +53,14 @@ function Shell() {
     [route.view === "post" ? route.id : null],
   );
 
+  // While editing a post, highlight the tab that matches its collection.
+  const [, setActiveCollection] = useActiveCollection();
+  useEffect(() => {
+    if (route.view === "post" && currentPost?.type) {
+      setActiveCollection(currentPost.type);
+    }
+  }, [route.view === "post", currentPost?.type, setActiveCollection]);
+
   useHotkeys(
     "mod+shift+s",
     async (e) => {
@@ -63,14 +73,17 @@ function Shell() {
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       {layout.sidebar && <Sidebar currentId={route.view === "post" ? route.id : null} />}
-      <main className="flex-1 overflow-y-auto">
-        {route.view === "list" && <CollectionTabs />}
-        {route.view === "post" && !currentPost && (
-          <div className="flex h-full items-center justify-center text-fg-faint">
-            Post not found.
-          </div>
-        )}
-        {route.view === "post" && currentPost && <Editor post={currentPost} />}
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <CollectionTabBar />
+        <div className="flex-1 overflow-y-auto">
+          {route.view === "list" && <CollectionTabs />}
+          {route.view === "post" && !currentPost && (
+            <div className="flex h-full items-center justify-center text-tertiary">
+              Post not found.
+            </div>
+          )}
+          {route.view === "post" && currentPost && <Editor post={currentPost} />}
+        </div>
       </main>
       {layout.attributes && route.view === "post" && currentPost && (
         <AttributePanel post={currentPost} />

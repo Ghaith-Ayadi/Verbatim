@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { postHref } from "@/lib/route";
-import { collectionDisplay, renameCollection, upsertCollection } from "@/lib/collections";
+import { renameCollection, upsertCollection } from "@/lib/collections";
+import { useActiveCollection } from "@/lib/activeCollection";
 import type { Collection, Post } from "@/types";
 
-const LAST_TAB_KEY = "verbatim:lastTab";
-
+/**
+ * Home view. The tab bar lives in App so it's visible everywhere; this
+ * component just renders the body for the active collection.
+ */
 export function CollectionTabs() {
   const collections = useLiveQuery(
     () => db.collections.orderBy("position").toArray(),
@@ -18,42 +21,28 @@ export function CollectionTabs() {
     [],
     [] as Post[],
   );
+  const [active, setActive] = useActiveCollection();
 
-  // Auto-create any collection that posts reference but the table is missing.
-  // Keeps the UI tolerant when posts pick up new types via MCP / DB edits.
+  // Auto-create rows for any post type without a registry entry.
   const referenced = useMemo(() => {
     const s = new Set<string>();
     for (const p of posts) if (p.type) s.add(p.type);
     return s;
   }, [posts]);
   useEffect(() => {
-    if (collections.length === 0 && referenced.size === 0) return;
     const have = new Set(collections.map((c) => c.name));
     for (const name of referenced) {
       if (!have.has(name)) void upsertCollection(name, {});
     }
   }, [collections, referenced]);
 
-  const [active, setActive] = useState<string | null>(() => {
-    return typeof localStorage !== "undefined" ? localStorage.getItem(LAST_TAB_KEY) : null;
-  });
-
-  // Fall back to the first collection if the remembered one no longer exists.
-  const activeName: string | null = useMemo(() => {
-    if (!collections.length) return null;
-    if (active && collections.some((c) => c.name === active)) return active;
-    return collections[0].name;
-  }, [active, collections]);
-
+  // Seed the active collection on first paint.
   useEffect(() => {
-    if (activeName) localStorage.setItem(LAST_TAB_KEY, activeName);
-  }, [activeName]);
-
-  const activeCollection = collections.find((c) => c.name === activeName) ?? null;
-  const collectionPosts = useMemo(
-    () => (activeName ? posts.filter((p) => p.type === activeName) : []),
-    [posts, activeName],
-  );
+    if (!collections.length) return;
+    if (!active || !collections.some((c) => c.name === active)) {
+      setActive(collections[0].name);
+    }
+  }, [collections, active, setActive]);
 
   if (collections.length === 0) {
     return (
@@ -63,69 +52,23 @@ export function CollectionTabs() {
     );
   }
 
+  const activeName =
+    active && collections.some((c) => c.name === active) ? active : collections[0].name;
+  const activeCollection = collections.find((c) => c.name === activeName)!;
+  const collectionPosts = posts.filter((p) => p.type === activeName);
+
   return (
-    <div className="mx-auto flex h-full max-w-[860px] flex-col px-10 pt-8 pb-16">
-      <TabBar
-        collections={collections}
-        active={activeName}
-        onSelect={(name) => setActive(name)}
-      />
-      <div className="mt-10 flex-1">
-        {activeCollection && (
-          <CollectionView collection={activeCollection} posts={collectionPosts} />
-        )}
-      </div>
+    <div className="mx-auto h-full max-w-[860px] px-10 pt-10 pb-16">
+      <CollectionView collection={activeCollection} posts={collectionPosts} />
     </div>
   );
 }
 
-function TabBar({
-  collections,
-  active,
-  onSelect,
-}: {
-  collections: Collection[];
-  active: string | null;
-  onSelect: (name: string) => void;
-}) {
-  return (
-    <nav
-      role="tablist"
-      className="-mx-2 flex items-center gap-1 overflow-x-auto border-b border-secondary"
-    >
-      {collections.map((c) => {
-        const d = collectionDisplay(c.name, collections);
-        const isActive = c.name === active;
-        return (
-          <button
-            key={c.name}
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onSelect(c.name)}
-            className={[
-              "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm transition",
-              isActive
-                ? "border-fg-brand-primary text-primary"
-                : "border-transparent text-tertiary hover:text-secondary",
-            ].join(" ")}
-          >
-            {d.emoji && <span className="text-base leading-none">{d.emoji}</span>}
-            <span className="font-medium">{d.label || c.name}</span>
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-
 function CollectionView({ collection, posts }: { collection: Collection; posts: Post[] }) {
-  // Local form state so typing doesn't fire a save on every keystroke.
-  // Commits on blur or Enter (for inputs).
   const [emojiDraft, setEmojiDraft] = useState(collection.emoji ?? "");
   const [nameDraft, setNameDraft] = useState(collection.name);
   const [descDraft, setDescDraft] = useState(collection.description ?? "");
 
-  // Sync drafts when switching tabs.
   useEffect(() => {
     setEmojiDraft(collection.emoji ?? "");
     setNameDraft(collection.name);
