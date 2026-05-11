@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Collection } from "@/types";
 import type { BlogPost } from "@/blog/data";
-import { collectionHref, postHref, useBlogRoute } from "@/blog/route";
-import { Masthead } from "./Masthead";
+import { navigateTo, postHref } from "@/blog/route";
+import { useActiveTab } from "@/blog/activeTab";
+import { readTime } from "@/lib/format";
+import { Topbar } from "./Topbar";
 import { Hero } from "./Hero";
 import { Colophon } from "./Colophon";
 
@@ -11,8 +13,6 @@ type SortMode = "latest" | "az";
 interface Props {
   collections: Collection[];
   posts: BlogPost[];
-  /** When the URL is /c/:name, seed the active tab from it. */
-  initialActive: string | null;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -22,33 +22,25 @@ function fmtDate(ms: number | null): string {
   return `${String(d.getDate()).padStart(2, "0")} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export function Home({ collections, posts, initialActive }: Props) {
-  const [, navigate] = useBlogRoute();
+export function Home({ collections, posts }: Props) {
+  const [storedTab, setStoredTab] = useActiveTab();
   const [sort, setSort] = useState<SortMode>("latest");
 
-  // Resolve the active collection from the URL when possible; otherwise pick
-  // the first collection that actually has posts.
+  // Resolve the active collection: stored value if valid, else the first one
+  // that actually has posts, else the first collection.
   const fallbackName = useMemo(() => {
     const withPosts = collections.find((c) => posts.some((p) => p.type === c.name));
     return withPosts?.name ?? collections[0]?.name ?? "";
   }, [collections, posts]);
 
-  const [activeName, setActiveName] = useState<string>(
-    initialActive && collections.some((c) => c.name === initialActive)
-      ? initialActive
-      : fallbackName,
-  );
+  const activeName =
+    storedTab && collections.some((c) => c.name === storedTab) ? storedTab : fallbackName;
 
-  // Tab title and URL stay in sync with the active tab.
+  // Keep document.title pinned to the brand on home (tabs don't change URL,
+  // so they shouldn't change the page title either).
   useEffect(() => {
-    if (!activeName) return;
-    document.title = `${activeName} — Verbatim`;
-  }, [activeName]);
-
-  function selectCollection(name: string) {
-    setActiveName(name);
-    navigate({ view: "collection", name }, { replace: false });
-  }
+    document.title = "Verbatim";
+  }, []);
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -58,9 +50,7 @@ export function Home({ collections, posts, initialActive }: Props) {
 
   const visible = useMemo(() => {
     const xs = posts.filter((p) => p.type === activeName);
-    if (sort === "az") {
-      return [...xs].sort((a, b) => a.title.localeCompare(b.title));
-    }
+    if (sort === "az") return [...xs].sort((a, b) => a.title.localeCompare(b.title));
     return [...xs].sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0));
   }, [posts, activeName, sort]);
 
@@ -72,7 +62,7 @@ export function Home({ collections, posts, initialActive }: Props) {
 
   return (
     <div className="blog-app">
-      <Masthead />
+      <Topbar />
       <Hero
         postCount={posts.length}
         collectionCount={collections.length}
@@ -84,19 +74,16 @@ export function Home({ collections, posts, initialActive }: Props) {
           {collections.map((c) => {
             const display = c.emoji ? `${c.emoji} ${c.name}` : c.name;
             return (
-              <a
+              <button
                 key={c.name}
+                type="button"
                 role="tab"
                 aria-selected={c.name === activeName}
                 className="blog-tab"
-                href={collectionHref(c.name)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  selectCollection(c.name);
-                }}
+                onClick={() => setStoredTab(c.name)}
               >
                 {display} <span className="count">{counts[c.name] ?? 0}</span>
-              </a>
+              </button>
             );
           })}
           <span className="spacer" />
@@ -135,23 +122,31 @@ export function Home({ collections, posts, initialActive }: Props) {
                 Nothing published in this collection yet.
               </p>
             )}
-            {visible.map((p, i) => (
-              <a
-                key={p.id}
-                href={postHref(p.slug)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate({ view: "post", slug: p.slug });
-                }}
-                className={`blog-post-row${i === 0 ? " featured" : ""}`}
-              >
-                <div className="pr-title">
-                  {p.title || "Untitled"}
-                  {p.excerpt && <span className="pr-dek">{p.excerpt}</span>}
-                </div>
-                <div className="pr-date">{fmtDate(p.publishedAt)}</div>
-              </a>
-            ))}
+            {visible.map((p) => {
+              const rt = readTime(p.wordCount);
+              return (
+                <a
+                  key={p.id}
+                  href={postHref(p.slug)}
+                  onClick={(e) => {
+                    // Allow cmd/ctrl-click to open in a new tab.
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                    e.preventDefault();
+                    navigateTo({ view: "post", slug: p.slug });
+                  }}
+                  className="blog-post-row"
+                >
+                  <div className="pr-title">
+                    {p.title || "Untitled"}
+                    {p.excerpt && <span className="pr-dek">{p.excerpt}</span>}
+                  </div>
+                  <div className="pr-meta">
+                    <span>{fmtDate(p.publishedAt)}</span>
+                    {rt > 0 && <span className="read">{rt} min read</span>}
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </section>
       )}

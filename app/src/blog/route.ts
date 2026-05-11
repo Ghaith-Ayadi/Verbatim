@@ -1,57 +1,68 @@
-// Path-based routing for the public blog.
+// Public blog routing. Singleton store so every useBlogRoute() consumer
+// sees the same state — previously each hook had its own useState and only
+// the caller's component re-rendered on navigate().
 //
-//   /               → Home (default collection)
-//   /c/:name        → Home with a specific collection open
-//   /p/:slug        → Single post
+// Routes:
+//   /        → Home
+//   /p/:slug → Single post
 //
-// Editor lives separately under /admin and uses its own hash routing.
+// The active home tab is component-local state (not in the URL): tab
+// clicks shouldn't push history or scroll.
 
 import { useEffect, useState } from "react";
 
 export type BlogRoute =
   | { view: "home" }
-  | { view: "collection"; name: string }
   | { view: "post"; slug: string };
 
 function parse(): BlogRoute {
-  const path = window.location.pathname;
-  let m = path.match(/^\/p\/([^/]+)\/?$/);
+  if (typeof window === "undefined") return { view: "home" };
+  const m = window.location.pathname.match(/^\/p\/([^/]+)\/?$/);
   if (m) return { view: "post", slug: decodeURIComponent(m[1]) };
-  m = path.match(/^\/c\/([^/]+)\/?$/);
-  if (m) return { view: "collection", name: decodeURIComponent(m[1]) };
   return { view: "home" };
 }
 
 function toPath(r: BlogRoute): string {
-  if (r.view === "post") return `/p/${encodeURIComponent(r.slug)}`;
-  if (r.view === "collection") return `/c/${encodeURIComponent(r.name)}`;
-  return "/";
+  return r.view === "post" ? `/p/${encodeURIComponent(r.slug)}` : "/";
 }
 
-export function useBlogRoute(): [BlogRoute, (r: BlogRoute, opts?: { replace?: boolean }) => void] {
-  const [route, setRoute] = useState<BlogRoute>(parse());
+// --- singleton store ---
+let current: BlogRoute = parse();
+const listeners = new Set<(r: BlogRoute) => void>();
+function emit() {
+  for (const l of listeners) l(current);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", () => {
+    current = parse();
+    emit();
+  });
+}
+
+export function navigateTo(r: BlogRoute, opts?: { replace?: boolean }) {
+  const path = toPath(r);
+  if (typeof window !== "undefined" && window.location.pathname !== path) {
+    if (opts?.replace) window.history.replaceState({}, "", path);
+    else window.history.pushState({}, "", path);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  current = r;
+  emit();
+}
+
+export function useBlogRoute(): [BlogRoute, typeof navigateTo] {
+  const [route, setRoute] = useState<BlogRoute>(current);
   useEffect(() => {
-    const onPop = () => setRoute(parse());
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    const fn = (r: BlogRoute) => setRoute(r);
+    listeners.add(fn);
+    // Sync in case the singleton moved between mount and subscribe.
+    setRoute(current);
+    return () => {
+      listeners.delete(fn);
+    };
   }, []);
-  const navigate = (r: BlogRoute, opts?: { replace?: boolean }) => {
-    const path = toPath(r);
-    if (window.location.pathname !== path) {
-      if (opts?.replace) window.history.replaceState({}, "", path);
-      else window.history.pushState({}, "", path);
-      setRoute(r);
-      window.scrollTo({ top: 0, behavior: "instant" });
-    } else {
-      // URL unchanged but caller intended a state sync — still update React.
-      setRoute(r);
-    }
-  };
-  return [route, navigate];
-}
-
-export function collectionHref(name: string): string {
-  return toPath({ view: "collection", name });
+  return [route, navigateTo];
 }
 
 export function postHref(slug: string): string {

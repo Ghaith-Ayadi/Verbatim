@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { fetchPostBySlug, useBlogData, type BlogPost } from "@/blog/data";
-import { collectionHref, postHref, useBlogRoute } from "@/blog/route";
+import { navigateTo, postHref, useBlogRoute } from "@/blog/route";
+import { setActiveTab } from "@/blog/activeTab";
+import { Topbar } from "./Topbar";
 import { Colophon } from "./Colophon";
 import { readTime } from "@/lib/format";
 import { useSetting } from "@/lib/settings";
@@ -35,8 +37,7 @@ function titleWithLastEm(title: string): React.ReactNode {
 
 /**
  * Replace `[[slug]]` wikilinks with regular markdown links so they render as
- * real anchors. Resolves against the set of known posts for nicer label text
- * (uses the target post's title if available, otherwise the raw slug).
+ * real anchors. Resolves against the set of known posts for nicer label text.
  */
 function resolveWikilinks(md: string, postsBySlug: Map<string, BlogPost>): string {
   return md.replace(/\[\[([^\[\]\n]+?)\]\]/g, (_, raw: string) => {
@@ -53,7 +54,6 @@ function firstParagraph(md: string, maxLen = 220): string {
   for (const block of md.split(/\n{2,}/)) {
     const t = block.trim();
     if (!t) continue;
-    // Skip headings, lists, blockquotes, code fences.
     if (/^([#`>]|-{1,2}\s|\*\s|\d+\.\s|```)/.test(t)) continue;
     const flat = t.replace(/\s+/g, " ").replace(/[*_`]/g, "").trim();
     if (flat.length <= maxLen) return flat;
@@ -78,7 +78,8 @@ function ReadingProgress() {
 }
 
 export function Reader({ slug }: Props) {
-  const [, navigate] = useBlogRoute();
+  const [, _navigate] = useBlogRoute(); // subscribe so re-renders propagate
+  void _navigate;
   const { collections, posts } = useBlogData();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +87,6 @@ export function Reader({ slug }: Props) {
   const authorTagline = useSetting<string>("author.tagline", "");
   const authorLocation = useSetting<string>("author.location", "");
 
-  // Fetch on slug change + reset to top.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -105,14 +105,9 @@ export function Reader({ slug }: Props) {
 
   // Tab title (SEO + nicety).
   useEffect(() => {
-    const prior = document.title;
     if (post?.title) document.title = `${post.title} — Verbatim`;
-    return () => {
-      document.title = prior;
-    };
   }, [post?.title]);
 
-  // Same-collection prev/next, sorted by published_at desc.
   const peers = useMemo(() => {
     if (!post) return [] as BlogPost[];
     return posts
@@ -125,16 +120,16 @@ export function Reader({ slug }: Props) {
 
   const collection = post ? collections.find((c) => c.name === post.type) : null;
   const colDisplay = collection ? collection.name : post?.type ?? "";
-  const colEmoji = collection?.emoji ?? "";
+
+  function backToCollection() {
+    if (post?.type) setActiveTab(post.type);
+    navigateTo({ view: "home" });
+  }
 
   if (loading) {
     return (
       <div className="blog-app">
-        <div className="blog-reader-bar">
-          <button className="back" onClick={() => navigate({ view: "home" })}>
-            ← Index
-          </button>
-        </div>
+        <Topbar backLabel="Index" onBack={() => navigateTo({ view: "home" })} />
         <div
           style={{
             padding: "120px 0",
@@ -154,11 +149,7 @@ export function Reader({ slug }: Props) {
   if (!post) {
     return (
       <div className="blog-app">
-        <div className="blog-reader-bar">
-          <button className="back" onClick={() => navigate({ view: "home" })}>
-            ← Index
-          </button>
-        </div>
+        <Topbar backLabel="Index" onBack={() => navigateTo({ view: "home" })} />
         <article className="blog-article">
           <h1>Not found.</h1>
           <p className="dek">That post isn't published, or the URL is off.</p>
@@ -178,39 +169,35 @@ export function Reader({ slug }: Props) {
     <div className="blog-app">
       <ReadingProgress />
 
-      <div className="blog-reader-bar">
-        <button className="back" onClick={() => navigate({ view: "home" })}>
-          ← Index
-        </button>
-        <div className="crumb">
-          <a
-            href={collectionHref(post.type)}
-            onClick={(e) => {
-              e.preventDefault();
-              navigate({ view: "collection", name: post.type });
-            }}
-            className="col-name"
-          >
-            {colEmoji ? `${colEmoji} ${colDisplay}` : colDisplay}
-          </a>
-        </div>
-        <div className="reader-meta">
-          {rtMin > 0 && <span>{rtMin} min read</span>}
-          <span>{fmtDate(post.publishedAt)}</span>
-        </div>
-      </div>
+      <Topbar
+        backLabel={colDisplay || "Index"}
+        onBack={backToCollection}
+        right={
+          <>
+            {rtMin > 0 && <span>{rtMin} min read</span>}
+            <span>{fmtDate(post.publishedAt)}</span>
+          </>
+        }
+      />
 
       <article className="blog-article">
         <div className="a-eyebrow">
-          <a
-            href={collectionHref(post.type)}
-            onClick={(e) => {
-              e.preventDefault();
-              navigate({ view: "collection", name: post.type });
+          <button
+            type="button"
+            onClick={backToCollection}
+            style={{
+              background: "none",
+              border: 0,
+              padding: 0,
+              cursor: "pointer",
+              font: "inherit",
+              color: "inherit",
+              textTransform: "inherit",
+              letterSpacing: "inherit",
             }}
           >
             {colDisplay}
-          </a>
+          </button>
         </div>
 
         <h1>{titleWithLastEm(post.title)}</h1>
@@ -268,9 +255,10 @@ export function Reader({ slug }: Props) {
                     <a
                       href={href}
                       onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
                         e.preventDefault();
                         const slug = decodeURIComponent(href.replace(/^\/p\//, ""));
-                        navigate({ view: "post", slug });
+                        navigateTo({ view: "post", slug });
                       }}
                       {...rest}
                     >
@@ -325,7 +313,7 @@ export function Reader({ slug }: Props) {
             <button
               type="button"
               className="blog-np prev"
-              onClick={() => navigate({ view: "post", slug: prev.slug })}
+              onClick={() => navigateTo({ view: "post", slug: prev.slug })}
             >
               <div className="npl">← Previous</div>
               <div className="npt">{prev.title || "Untitled"}</div>
@@ -337,7 +325,7 @@ export function Reader({ slug }: Props) {
             <button
               type="button"
               className="blog-np next"
-              onClick={() => navigate({ view: "post", slug: next.slug })}
+              onClick={() => navigateTo({ view: "post", slug: next.slug })}
             >
               <div className="npl">Next →</div>
               <div className="npt">{next.title || "Untitled"}</div>

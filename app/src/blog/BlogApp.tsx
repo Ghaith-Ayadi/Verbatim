@@ -17,18 +17,15 @@ export function BlogApp() {
     void installSettings();
   }, []);
 
-  // Apply settings-controlled <link rel="icon"> and <title>.
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    if (faviconUrl) {
-      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-      if (!link) {
-        link = document.createElement("link");
-        link.rel = "icon";
-        document.head.appendChild(link);
-      }
-      link.href = faviconUrl;
+    if (typeof document === "undefined" || !faviconUrl) return;
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
     }
+    link.href = faviconUrl;
   }, [faviconUrl]);
 
   useEffect(() => {
@@ -39,6 +36,7 @@ export function BlogApp() {
   if (error) {
     return (
       <div className="blog-app">
+        <AdminStrip />
         <div className="blog-article">
           <h1>Something broke.</h1>
           <p className="dek">{error}</p>
@@ -66,21 +64,14 @@ export function BlogApp() {
     );
   }
 
-  const body =
-    route.view === "post" ? (
-      <Reader slug={route.slug} />
-    ) : (
-      <Home
-        collections={collections}
-        posts={posts}
-        initialActive={route.view === "collection" ? route.name : null}
-      />
-    );
-
   return (
     <>
       <AdminStrip />
-      {body}
+      {route.view === "post" ? (
+        <Reader slug={route.slug} />
+      ) : (
+        <Home collections={collections} posts={posts} />
+      )}
     </>
   );
 }
