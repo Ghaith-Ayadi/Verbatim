@@ -62,19 +62,24 @@ export function CommandPalette({ currentPostId }: Props) {
     () => "v",
   );
 
-  useHotkeys("mod+k", (e) => {
-    e.preventDefault();
-    setOpen((o) => !o);
-  });
+  useHotkeys(
+    "mod+k",
+    (e) => {
+      e.preventDefault();
+      setOpen((o) => !o);
+    },
+    { enableOnFormTags: true },
+  );
   useHotkeys(
     "mod+shift+n",
     (e) => {
       e.preventDefault();
       void newPost(defaultCollection);
     },
+    { enableOnFormTags: true },
     [defaultCollection],
   );
-  useHotkeys("escape", () => setOpen(false), { enabled: open });
+  useHotkeys("escape", () => setOpen(false), { enabled: open, enableOnFormTags: true });
 
   useEffect(() => {
     if (!open) setQ("");
