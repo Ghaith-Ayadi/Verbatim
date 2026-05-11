@@ -10,6 +10,7 @@ import { updatePost } from "@/lib/posts";
 import { uploadFile } from "@/lib/uploads";
 import { go } from "@/lib/route";
 import { collectionDisplay } from "@/lib/collections";
+import { useTheme } from "@/lib/theme";
 import type { Collection } from "@/types";
 import { WikilinkAutocomplete } from "@/components/WikilinkAutocomplete";
 
@@ -21,6 +22,7 @@ const SAVE_DEBOUNCE_MS = 100;
 
 export function Editor({ post }: Props) {
   const editor = useCreateBlockNote({ uploadFile });
+  const [theme] = useTheme();
   const lastLoadedId = useRef<number | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -63,7 +65,7 @@ export function Editor({ post }: Props) {
         className="mb-8 w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
       />
       <div ref={editorRootRef}>
-        <BlockNoteView editor={editor} theme="dark" />
+        <BlockNoteView editor={editor} theme={theme} />
         <WikilinkAutocomplete rootRef={editorRootRef} />
       </div>
     </div>
