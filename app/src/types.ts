@@ -15,6 +15,7 @@ export interface Post {
   content: string;              // Markdown body (content_md in the DB)
   notionId: string | null;
   favorited: boolean;
+  collectionSeq: number | null; // 1-based position inside its collection
   createdAt: number;
   updatedAt: number;
   // sync metadata, local-only

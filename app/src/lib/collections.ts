@@ -156,3 +156,35 @@ export async function createCollection(
   const position = all.length === 0 ? 0 : Math.max(...all.map((c) => c.position)) + 1;
   await upsertCollection(name, { ...patch, position });
 }
+
+/**
+ * Duplicate a collection. Copies the row metadata under a new name (auto-
+ * suffixed " copy") and leaves posts in the original — duplicating posts in
+ * bulk is rarely what you want.
+ */
+export async function duplicateCollection(source: string): Promise<string | null> {
+  const existing = await db.collections.get(source);
+  if (!existing) return null;
+  // Pick "<name> copy", "<name> copy 2", … until free.
+  const all = await db.collections.toArray();
+  const taken = new Set(all.map((c) => c.name));
+  let candidate = `${existing.name} copy`;
+  let n = 2;
+  while (taken.has(candidate)) candidate = `${existing.name} copy ${n++}`;
+  await createCollection(candidate, {
+    emoji: existing.emoji,
+    description: existing.description,
+  });
+  return candidate;
+}
+
+/**
+ * Delete a collection. Posts in it keep their `type` text — they're no
+ * longer grouped under a known collection but their content is intact.
+ * Caller is responsible for confirmation (typing the name).
+ */
+export async function deleteCollection(name: string): Promise<void> {
+  await db.collections.delete(name);
+  const { error } = await supabase.from("collections").delete().eq("name", name);
+  if (error) console.error("deleteCollection failed:", error);
+}

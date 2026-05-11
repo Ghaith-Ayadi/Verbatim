@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import type { Collection, Post, PostVersion } from "@/types";
 import { setPostStatus, toggleFavorite, updatePost } from "@/lib/posts";
 import { collectionDisplay } from "@/lib/collections";
+import { formatDate, relativeTime } from "@/lib/format";
 import { DiffModal } from "@/components/DiffModal";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
@@ -81,9 +82,7 @@ export function AttributePanel({ post }: Props) {
       </FieldStack>
 
       <FieldStack label="Published">
-        <div className="text-secondary">
-          {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : "—"}
-        </div>
+        <div className="date-pill text-secondary">{formatDate(post.publishedAt)}</div>
       </FieldStack>
 
       <FieldStack label="Category">
@@ -125,7 +124,7 @@ export function AttributePanel({ post }: Props) {
                       <span className="ml-1 text-quaternary">· {v.createdBy}</span>
                     )}
                   </span>
-                  <span className="text-quaternary">{relative(v.createdAt)}</span>
+                  <span className="date-pill text-quaternary">{relativeTime(v.createdAt)}</span>
                 </button>
               </li>
             ))}
@@ -151,13 +150,3 @@ function FieldStack({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-function relative(t: number): string {
-  const dt = Date.now() - t;
-  const m = Math.floor(dt / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}

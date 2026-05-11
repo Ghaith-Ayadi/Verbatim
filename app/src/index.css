@@ -25,6 +25,32 @@ html, body, #root {
   color: var(--color-bg-primary);
 }
 
+/* Floor body text at 12px so the smallest utility classes never go subliminal. */
+body {
+  font-size: 14px;
+}
+body *:where(.text-xs, .text-\[11px\], .text-\[10px\], .text-\[9px\]) {
+  font-size: 12px !important;
+  line-height: 1.4;
+}
+
+/* Date pill — monospace + tabular figures so columns line up. */
+.date-pill {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Buttons/tabs/links get the hand cursor — react-aria's components don't
+   set this themselves and the dashboard convention is to opt in. */
+button:not(:disabled),
+[role="tab"]:not([aria-disabled="true"]),
+[role="menuitem"],
+[role="option"],
+a {
+  cursor: pointer;
+}
+
 /* Subtle scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--color-border-secondary); border-radius: 8px; }

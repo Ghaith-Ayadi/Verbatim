@@ -17,6 +17,7 @@ export interface PostRow {
   content_md: string | null;
   notion_id: string | null;
   favorited: boolean;
+  collection_seq: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +38,7 @@ export function fromRow(r: PostRow): Post {
     content: r.content_md ?? "",
     notionId: r.notion_id,
     favorited: !!r.favorited,
+    collectionSeq: r.collection_seq ?? null,
     createdAt: new Date(r.created_at).getTime(),
     updatedAt: new Date(r.updated_at).getTime(),
   };
@@ -55,6 +57,7 @@ export function toRow(p: Post): Partial<PostRow> {
     content_md: p.content,
     notion_id: p.notionId,
     favorited: p.favorited,
+    collection_seq: p.collectionSeq ?? null,
   };
 }
 

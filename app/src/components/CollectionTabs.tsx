@@ -1,9 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Copy04, DotsHorizontal, EyeOff, FilePlus02, Trash01 } from "@untitledui/icons";
 import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
+import { go } from "@/lib/route";
 import { postHref } from "@/lib/route";
-import { renameCollection, upsertCollection } from "@/lib/collections";
+import {
+  deleteCollection,
+  duplicateCollection,
+  renameCollection,
+  upsertCollection,
+} from "@/lib/collections";
 import { useActiveCollection } from "@/lib/activeCollection";
+import { formatDate } from "@/lib/format";
+import { fromRow, type PostRow } from "@/lib/posts";
+import { ActionMenu } from "@/components/Menu";
+import { ConfirmTypeDialog } from "@/components/ConfirmTypeDialog";
+import { Button } from "@/components/base/buttons/button";
 import type { Collection, Post } from "@/types";
 
 /**
@@ -68,6 +81,8 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
   const [emojiDraft, setEmojiDraft] = useState(collection.emoji ?? "");
   const [nameDraft, setNameDraft] = useState(collection.name);
   const [descDraft, setDescDraft] = useState(collection.description ?? "");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [, setActive] = useActiveCollection();
 
   useEffect(() => {
     setEmojiDraft(collection.emoji ?? "");
@@ -93,8 +108,69 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
     }
   };
 
+  async function addPost() {
+    const peers = await db.posts.where("type").equals(collection.name).toArray();
+    const nextSeq = peers.reduce((m, p) => Math.max(m, p.collectionSeq ?? 0), 0) + 1;
+    const { data, error } = await supabase
+      .from("posts")
+      .insert({
+        title: "",
+        slug: String(nextSeq),
+        type: collection.name,
+        status: "draft",
+        content_md: "",
+        collection_seq: nextSeq,
+      })
+      .select()
+      .single();
+    if (error) {
+      console.error(error);
+      window.alert(`New post failed: ${error.message}`);
+      return;
+    }
+    const post = fromRow(data as PostRow);
+    await db.posts.put({ ...post, syncedAt: Date.now(), dirty: false });
+    go({ view: "post", id: post.id });
+  }
+
+  async function onDuplicate() {
+    const next = await duplicateCollection(collection.name);
+    if (next) setActive(next);
+  }
+
   return (
     <div>
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <Button size="sm" color="tertiary" iconLeading={FilePlus02} onClick={() => void addPost()}>
+          Add post
+        </Button>
+        <ActionMenu
+          trigger={<DotsHorizontal className="size-4" data-icon />}
+          items={[
+            {
+              id: "duplicate",
+              label: "Duplicate",
+              icon: <Copy04 className="size-4" />,
+              onAction: () => void onDuplicate(),
+            },
+            {
+              id: "hide",
+              label: "Hide from public site",
+              icon: <EyeOff className="size-4" />,
+              disabled: true,
+              onAction: () => {},
+            },
+            {
+              id: "delete",
+              label: "Delete collection…",
+              icon: <Trash01 className="size-4" />,
+              destructive: true,
+              onAction: () => setConfirmDelete(true),
+            },
+          ]}
+        />
+      </div>
+
       <div className="flex items-start gap-3">
         <input
           aria-label="Collection emoji"
@@ -130,7 +206,12 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
         className="mt-3 w-full resize-none bg-transparent text-base text-secondary outline-none placeholder:text-quaternary"
       />
 
-      <ul className="mt-8 divide-y divide-secondary">
+      <div className="mt-8 flex items-baseline justify-between border-b border-secondary pb-2">
+        <span className="text-xs font-medium uppercase tracking-wide text-quaternary">
+          {posts.length} {posts.length === 1 ? "post" : "posts"}
+        </span>
+      </div>
+      <ul className="divide-y divide-secondary">
         {posts.length === 0 && (
           <li className="py-8 text-center text-sm text-tertiary">
             No posts in this collection yet.
@@ -140,21 +221,41 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
           <li key={p.id}>
             <a
               href={postHref(p.id)}
-              className="flex items-baseline justify-between gap-6 py-3 hover:opacity-90"
+              className="group flex items-baseline justify-between gap-6 py-3 transition hover:bg-primary_hover"
             >
-              <span className="flex items-baseline gap-2">
+              <span className="flex items-baseline gap-2 truncate">
+                <span className="date-pill w-10 shrink-0 text-xs text-quaternary">
+                  #{p.collectionSeq ?? "—"}
+                </span>
                 {p.status === "draft" && (
                   <span className="text-[11px] uppercase tracking-wide text-quaternary">draft</span>
                 )}
-                <span className="text-lg text-primary">{p.title || "Untitled"}</span>
+                <span className="truncate text-lg text-primary">{p.title || "Untitled"}</span>
               </span>
-              <span className="text-xs text-quaternary">
-                {new Date(p.updatedAt).toLocaleDateString()}
+              <span className="date-pill text-xs text-quaternary">
+                {formatDate(p.updatedAt)}
               </span>
             </a>
           </li>
         ))}
       </ul>
+
+      {confirmDelete && (
+        <ConfirmTypeDialog
+          title={`Delete "${collection.name}"`}
+          message={
+            <>
+              The {posts.length} {posts.length === 1 ? "post" : "posts"} in this collection won't be
+              deleted, but they'll lose this grouping.
+            </>
+          }
+          confirmation={collection.name}
+          confirmLabel="Delete collection"
+          destructive
+          onClose={() => setConfirmDelete(false)}
+          onConfirm={() => void deleteCollection(collection.name)}
+        />
+      )}
     </div>
   );
 }

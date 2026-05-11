@@ -47,6 +47,14 @@ class VerbatimDB extends Dexie {
       collections: "name, position, updatedAt",
       syncMeta: "key",
     });
+
+    // v5: per-collection sequential id, indexed for next() / prev() nav.
+    this.version(5).stores({
+      posts: "id, slug, status, type, favorited, updatedAt, publishedAt, [type+collectionSeq]",
+      versions: "id, postId, [postId+version], createdAt",
+      collections: "name, position, updatedAt",
+      syncMeta: "key",
+    });
   }
 }
 
