@@ -339,7 +339,7 @@ function Item({
   return (
     <Command.Item
       onSelect={onSelect}
-      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-secondary transition aria-selected:bg-primary_hover aria-selected:text-primary"
+      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-secondary transition aria-selected:bg-tertiary aria-selected:font-medium aria-selected:text-primary"
     >
       <span className="flex min-w-0 items-center gap-2.5">
         {emoji ? (

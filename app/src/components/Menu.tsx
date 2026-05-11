@@ -52,7 +52,7 @@ export function ActionMenu({
                 "flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm outline-none transition",
                 it.destructive
                   ? "text-error-primary hover:bg-error-primary/10 focus:bg-error-primary/10"
-                  : "text-secondary hover:bg-primary_hover focus:bg-primary_hover hover:text-primary focus:text-primary",
+                  : "text-secondary hover:bg-tertiary focus:bg-tertiary hover:text-primary focus:text-primary",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
