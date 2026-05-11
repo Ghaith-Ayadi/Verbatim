@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Copy04, DotsHorizontal, EyeOff, FilePlus02, Trash01 } from "@untitledui/icons";
+import { Copy04, DotsHorizontal, EyeOff, Trash01 } from "@untitledui/icons";
 import { db } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { go } from "@/lib/route";
-import { postHref } from "@/lib/route";
 import {
   deleteCollection,
   duplicateCollection,
@@ -12,11 +11,10 @@ import {
   upsertCollection,
 } from "@/lib/collections";
 import { useActiveCollection } from "@/lib/activeCollection";
-import { formatDate } from "@/lib/format";
 import { fromRow, type PostRow } from "@/lib/posts";
 import { ActionMenu } from "@/components/Menu";
 import { ConfirmTypeDialog } from "@/components/ConfirmTypeDialog";
-import { Button } from "@/components/base/buttons/button";
+import { PostTable } from "@/components/PostTable";
 import type { Collection, Post } from "@/types";
 
 /**
@@ -142,9 +140,6 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
   return (
     <div>
       <div className="mb-4 flex items-center justify-end gap-2">
-        <Button size="sm" color="tertiary" iconLeading={FilePlus02} onClick={() => void addPost()}>
-          Add post
-        </Button>
         <ActionMenu
           trigger={<DotsHorizontal className="size-4" data-icon />}
           items={[
@@ -207,39 +202,9 @@ function CollectionView({ collection, posts }: { collection: Collection; posts: 
         className="mt-3 w-full resize-none bg-transparent text-base text-secondary outline-none placeholder:text-quaternary"
       />
 
-      <div className="mt-8 flex items-baseline justify-between border-b border-secondary pb-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-quaternary">
-          {posts.length} {posts.length === 1 ? "post" : "posts"}
-        </span>
+      <div className="mt-8">
+        <PostTable posts={posts} onAddPost={() => void addPost()} />
       </div>
-      <ul className="divide-y divide-secondary">
-        {posts.length === 0 && (
-          <li className="py-8 text-center text-sm text-tertiary">
-            No posts in this collection yet.
-          </li>
-        )}
-        {posts.map((p) => (
-          <li key={p.id}>
-            <a
-              href={postHref(p.id)}
-              className="group flex items-baseline justify-between gap-6 py-3 transition hover:bg-primary_hover"
-            >
-              <span className="flex items-baseline gap-2 truncate">
-                <span className="date-pill w-10 shrink-0 text-xs text-quaternary">
-                  #{p.collectionSeq ?? "—"}
-                </span>
-                {p.status === "draft" && (
-                  <span className="text-[11px] uppercase tracking-wide text-quaternary">draft</span>
-                )}
-                <span className="truncate text-lg text-primary">{p.title || "Untitled"}</span>
-              </span>
-              <span className="date-pill text-xs text-quaternary">
-                {formatDate(p.updatedAt)}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
 
       {confirmDelete && (
         <ConfirmTypeDialog
