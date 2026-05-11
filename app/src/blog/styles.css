@@ -332,18 +332,20 @@
 }
 .blog-post-row .pr-meta {
   font-family: var(--ui);
-  font-size: 12px;
+  font-size: 17px;
+  font-weight: 300;
   color: var(--mute);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  line-height: 1.45;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: flex-end;
 }
 .blog-post-row .pr-meta .read {
-  color: var(--mute-2);
+  color: var(--mute);
 }
 
 /* ---------- colophon ---------- */
@@ -446,10 +448,12 @@
   margin: 0 0 24px;
   text-wrap: balance;
 }
-.blog-article h1 em {
+.blog-article h1 em,
+.blog-article h2 em,
+.blog-article h3 em {
   font-style: normal;
-  font-weight: 300;
-  color: var(--ink-2);
+  font-weight: inherit;
+  color: inherit;
 }
 .blog-article .dek {
   font-weight: 300;

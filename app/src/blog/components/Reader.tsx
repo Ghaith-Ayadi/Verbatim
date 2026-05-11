@@ -21,20 +21,6 @@ function fmtDate(ms: number | null | undefined): string {
   return `${String(d.getDate()).padStart(2, "0")} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/** Wrap the last word of the title in <em> for the design's tonal lift. */
-function titleWithLastEm(title: string): React.ReactNode {
-  if (!title) return "Untitled";
-  const words = title.split(/\s+/);
-  if (words.length === 1) return <em>{title}</em>;
-  const last = words.pop()!;
-  return (
-    <>
-      {words.join(" ")}{" "}
-      <em>{last}</em>
-    </>
-  );
-}
-
 /**
  * Replace `[[slug]]` wikilinks with regular markdown links so they render as
  * real anchors. Resolves against the set of known posts for nicer label text.
@@ -185,7 +171,7 @@ export function Reader({ slug }: Props) {
           </button>
         </div>
 
-        <h1>{titleWithLastEm(post.title)}</h1>
+        <h1>{post.title || "Untitled"}</h1>
 
         {dek && <p className="dek">{dek}</p>}
 
