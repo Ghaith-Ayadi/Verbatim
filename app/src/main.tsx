@@ -3,8 +3,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Untitled UI's dark variant keys off `.dark-mode` anywhere in the tree.
-document.documentElement.classList.add("dark-mode");
+// Side-effect: reads localStorage, applies `.dark-mode` class to <html>
+// before first paint so there's no flash.
+import "./lib/theme";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

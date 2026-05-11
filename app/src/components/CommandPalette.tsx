@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Command } from "cmdk";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowDown, ArrowUp, CornerDownLeft, FilePlus02, SearchLg } from "@untitledui/icons";
+import { ArrowDown, ArrowUp, CornerDownLeft, FilePlus02, Moon01, SearchLg, Sun } from "@untitledui/icons";
 import { db } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { search, subscribeSearch } from "@/lib/search";
@@ -10,6 +10,7 @@ import { go } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
 import { collectionDisplay } from "@/lib/collections";
 import { fromRow, setPostStatus, type PostRow } from "@/lib/posts";
+import { toggleTheme, useTheme } from "@/lib/theme";
 import type { Collection, Post } from "@/types";
 
 type Mode = "search" | "commands";
@@ -26,6 +27,7 @@ export function CommandPalette({ currentPostId }: Props) {
   const mode: Mode = q.length === 0 || q.startsWith("/") ? "commands" : "search";
   const commandQuery = q.startsWith("/") ? q.slice(1).trim().toLowerCase() : "";
   const [, , toggleAuthorMode] = useLayout();
+  const [theme] = useTheme();
 
   const allPosts = useLiveQuery(
     () => db.posts.orderBy("updatedAt").reverse().toArray(),
@@ -169,6 +171,16 @@ export function CommandPalette({ currentPostId }: Props) {
       hint: "⌘\\",
       onSelect: () => {
         toggleAuthorMode();
+        setOpen(false);
+      },
+    },
+    {
+      key: "theme",
+      label: theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
+      icon: theme === "dark" ? <Sun className="size-4" /> : <Moon01 className="size-4" />,
+      hint: "⌘⇧L",
+      onSelect: () => {
+        toggleTheme();
         setOpen(false);
       },
     },

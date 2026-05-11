@@ -60,7 +60,7 @@ export function Editor({ post }: Props) {
         value={post.title}
         onChange={(e) => void updatePost(post.id, { title: e.target.value })}
         placeholder="Untitled"
-        className="mb-8 w-full bg-transparent font-serif text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
+        className="mb-8 w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
       />
       <div ref={editorRootRef}>
         <BlockNoteView editor={editor} theme="dark" />

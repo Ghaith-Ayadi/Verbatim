@@ -14,6 +14,7 @@ const SECTIONS: { heading: string; items: Shortcut[] }[] = [
       { keys: ["⌘", "⇧", "N"], label: "New post in current collection" },
       { keys: ["⌘", "⇧", "S"], label: "Snapshot a version" },
       { keys: ["⌘", "\\"], label: "Toggle author mode" },
+      { keys: ["⌘", "⇧", "L"], label: "Toggle light / dark theme" },
       { keys: ["esc"], label: "Close palette / dialog" },
     ],
   },

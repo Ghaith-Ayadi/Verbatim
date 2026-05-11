@@ -53,10 +53,9 @@ export function Sidebar({ currentId }: Props) {
         <a
           href="#/"
           aria-label="Verbatim — home"
-          className="-mx-1 flex items-center gap-2 rounded-md px-2 py-1 text-lg font-medium tracking-tight text-primary transition hover:bg-primary_hover"
+          className="-mx-1 block rounded-md px-2 py-1 font-title text-xl tracking-tight text-primary transition hover:bg-primary_hover"
         >
-          <span className="font-mono text-base text-quaternary">V</span>
-          <span>Verbatim</span>
+          Verbatim
         </a>
       </div>
 

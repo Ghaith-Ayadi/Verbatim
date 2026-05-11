@@ -16,6 +16,7 @@ import { installLifecycleHandlers, setSyncUser, runSync, flushSync } from "@/lib
 import { startRealtime, stopRealtime } from "@/lib/realtime";
 import { installSearchIndex } from "@/lib/search";
 import { snapshotVersion } from "@/lib/versions";
+import { toggleTheme } from "@/lib/theme";
 
 export default function App() {
   return (
@@ -46,6 +47,10 @@ function Shell() {
   useHotkeys("mod+\\", (e) => {
     e.preventDefault();
     toggleAuthorMode();
+  });
+  useHotkeys("mod+shift+l", (e) => {
+    e.preventDefault();
+    toggleTheme();
   });
 
   const currentPost = useLiveQuery(
