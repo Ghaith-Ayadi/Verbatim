@@ -46,6 +46,6 @@ export default defineConfig(({ mode }) => {
     define: Object.fromEntries(
       Object.entries(env).map(([k, v]) => [`import.meta.env.${k}`, JSON.stringify(v)]),
     ),
-    server: { port: 5173 },
+    server: { port: process.env.PORT ? Number(process.env.PORT) : 5173 },
   };
 });
