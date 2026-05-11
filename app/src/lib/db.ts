@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Post, PostVersion } from "@/types";
+import type { CollectionMeta, Post, PostVersion } from "@/types";
 
 interface SyncMetaRow {
   key: string;
@@ -9,6 +9,7 @@ interface SyncMetaRow {
 class VerbatimDB extends Dexie {
   posts!: Table<Post, number>;
   versions!: Table<PostVersion, string>;
+  collectionMeta!: Table<CollectionMeta, string>;
   syncMeta!: Table<SyncMetaRow, string>;
 
   constructor() {
@@ -27,6 +28,14 @@ class VerbatimDB extends Dexie {
       posts: "id, slug, status, type, favorited, updatedAt, publishedAt",
       collections: null,
       versions: "id, postId, [postId+version], createdAt",
+      syncMeta: "key",
+    });
+
+    // v3: per-collection metadata (color, etc.)
+    this.version(3).stores({
+      posts: "id, slug, status, type, favorited, updatedAt, publishedAt",
+      versions: "id, postId, [postId+version], createdAt",
+      collectionMeta: "name, updatedAt",
       syncMeta: "key",
     });
   }

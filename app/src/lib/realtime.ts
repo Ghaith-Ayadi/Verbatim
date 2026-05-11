@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { fromRow, type PostRow } from "@/lib/posts";
 import { fromVersionRow } from "@/lib/versions";
 import { runSync } from "@/lib/sync";
+import { rememberColor } from "@/lib/colors";
 
 let channel: RealtimeChannel | null = null;
 
@@ -38,6 +39,28 @@ export function startRealtime() {
         const row = payload.new as Parameters<typeof fromVersionRow>[0];
         if (!row?.id) return;
         await db.versions.put(fromVersionRow(row));
+      },
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "collection_meta" },
+      async (payload) => {
+        if (payload.eventType === "DELETE") {
+          const old = payload.old as { name?: string };
+          if (old.name) {
+            await db.collectionMeta.delete(old.name);
+            rememberColor(old.name, null);
+          }
+          return;
+        }
+        const r = payload.new as { name: string; color: string; updated_at: string };
+        if (!r?.name) return;
+        await db.collectionMeta.put({
+          name: r.name,
+          color: r.color,
+          updatedAt: new Date(r.updated_at).getTime(),
+        });
+        rememberColor(r.name, r.color);
       },
     )
     .subscribe((status) => {

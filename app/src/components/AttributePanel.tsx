@@ -4,8 +4,9 @@ import { Star01 } from "@untitledui/icons";
 import { db } from "@/lib/db";
 import type { Post, PostVersion } from "@/types";
 import { setPostStatus, toggleFavorite, updatePost } from "@/lib/posts";
-import { collectionColor } from "@/lib/colors";
+import { useColorVersion } from "@/lib/colors";
 import { DiffModal } from "@/components/DiffModal";
+import { ColorPicker } from "@/components/ColorPicker";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function AttributePanel({ post }: Props) {
+  useColorVersion();
   const allPosts = useLiveQuery(() => db.posts.toArray(), [], [] as Post[]);
   const versions = useLiveQuery(
     () => db.versions.where("postId").equals(post.id).reverse().sortBy("version"),
@@ -49,25 +51,23 @@ export function AttributePanel({ post }: Props) {
         />
       </FieldStack>
 
-      <FieldStack
-        label="Collection"
-        leading={
-          <span
-            aria-hidden
-            className="inline-block h-2 w-2 rounded-full"
-            style={{ backgroundColor: collectionColor(post.type) }}
-          />
-        }
-      >
-        <Select
-          size="sm"
-          selectedKey={post.type ?? null}
-          onSelectionChange={(k) => void updatePost(post.id, { type: String(k ?? "") })}
-          items={collectionItems}
-          placeholder="—"
-        >
-          {(item) => <Select.Item id={item.id} label={item.label} />}
-        </Select>
+      <FieldStack label="Collection">
+        <div className="flex items-center gap-2">
+          {post.type ? <ColorPicker collection={post.type} /> : (
+            <span aria-hidden className="inline-block h-4 w-4 rounded-full bg-tertiary_alt" />
+          )}
+          <div className="flex-1">
+            <Select
+              size="sm"
+              selectedKey={post.type ?? null}
+              onSelectionChange={(k) => void updatePost(post.id, { type: String(k ?? "") })}
+              items={collectionItems}
+              placeholder="—"
+            >
+              {(item) => <Select.Item id={item.id} label={item.label} />}
+            </Select>
+          </div>
+        </div>
       </FieldStack>
 
       <FieldStack label="Status">

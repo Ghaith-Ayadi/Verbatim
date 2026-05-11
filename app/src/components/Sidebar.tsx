@@ -2,15 +2,16 @@ import { useMemo, useRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { db } from "@/lib/db";
-import { go } from "@/lib/route";
-import { collectionColor } from "@/lib/colors";
+import { postHref } from "@/lib/route";
+import { collectionColor, useColorVersion } from "@/lib/colors";
 import type { Post } from "@/types";
 
 interface Props {
-  currentSlug: string | null;
+  currentId: number | null;
 }
 
-export function Sidebar({ currentSlug }: Props) {
+export function Sidebar({ currentId }: Props) {
+  useColorVersion();
   const posts = useLiveQuery(
     () => db.posts.orderBy("updatedAt").reverse().toArray(),
     [],
@@ -39,11 +40,11 @@ export function Sidebar({ currentSlug }: Props) {
       <div className="flex-1 overflow-y-auto py-2">
         {favorites.length > 0 && (
           <Group label="Favorites">
-            <PostList posts={favorites} currentSlug={currentSlug} />
+            <PostList posts={favorites} currentId={currentId} />
           </Group>
         )}
         <Group label="Recent" defaultOpen>
-          <VirtualPostList posts={recent} currentSlug={currentSlug} />
+          <VirtualPostList posts={recent} currentId={currentId} />
         </Group>
         {collections.map((c) => (
           <Group
@@ -52,7 +53,7 @@ export function Sidebar({ currentSlug }: Props) {
             count={c.items.length}
             color={collectionColor(c.name)}
           >
-            <PostList posts={c.items} currentSlug={currentSlug} />
+            <PostList posts={c.items} currentId={currentId} />
           </Group>
         ))}
       </div>
@@ -112,17 +113,17 @@ function Group({
   );
 }
 
-function PostList({ posts, currentSlug }: { posts: Post[]; currentSlug: string | null }) {
+function PostList({ posts, currentId }: { posts: Post[]; currentId: number | null }) {
   return (
     <ul>
       {posts.map((p) => (
-        <PostRow key={p.id} post={p} active={p.slug === currentSlug} />
+        <PostRow key={p.id} post={p} active={p.id === currentId} />
       ))}
     </ul>
   );
 }
 
-function VirtualPostList({ posts, currentSlug }: { posts: Post[]; currentSlug: string | null }) {
+function VirtualPostList({ posts, currentId }: { posts: Post[]; currentId: number | null }) {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const virtual = useVirtualizer({
     count: posts.length,
@@ -147,7 +148,7 @@ function VirtualPostList({ posts, currentSlug }: { posts: Post[]; currentSlug: s
                 transform: `translateY(${vi.start}px)`,
               }}
             >
-              <PostRow post={p} active={p.slug === currentSlug} />
+              <PostRow post={p} active={p.id === currentId} />
             </div>
           );
         })}
@@ -161,7 +162,7 @@ function PostRow({ post, active }: { post: Post; active: boolean }) {
   const dotColor = post.type ? collectionColor(post.type) : "transparent";
   return (
     <a
-      href={`#/post/${encodeURIComponent(post.slug)}`}
+      href={postHref(post.id)}
       className={[
         "flex items-center gap-2 truncate px-3 py-1 text-sm",
         active ? "bg-bg-hover text-fg" : "text-fg-muted hover:bg-bg-hover hover:text-fg",

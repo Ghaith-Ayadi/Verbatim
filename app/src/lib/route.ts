@@ -1,17 +1,21 @@
-// Tiny URL state hook. PRD called for TanStack Router but at MVP scope
-// (3 views, no nested data deps) the runtime + boilerplate isn't worth it.
+// Tiny URL state hook. Routes by post ID (not slug) so editing the slug
+// in the attribute panel doesn't break the page.
 
 import { useEffect, useState } from "react";
 
 export type Route =
   | { view: "list" }
-  | { view: "post"; slug: string };
+  | { view: "post"; id: number };
 
 function parse(): Route {
   const h = window.location.hash;
-  const m = h.match(/^#\/post\/(.+)$/);
-  if (m) return { view: "post", slug: decodeURIComponent(m[1]) };
+  const m = h.match(/^#\/post\/(\d+)$/);
+  if (m) return { view: "post", id: Number(m[1]) };
   return { view: "list" };
+}
+
+function toHash(r: Route): string {
+  return r.view === "list" ? "#/" : `#/post/${r.id}`;
 }
 
 export function useRoute(): [Route, (r: Route) => void] {
@@ -22,7 +26,7 @@ export function useRoute(): [Route, (r: Route) => void] {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
   const navigate = (r: Route) => {
-    const hash = r.view === "list" ? "#/" : `#/post/${encodeURIComponent(r.slug)}`;
+    const hash = toHash(r);
     if (window.location.hash !== hash) window.location.hash = hash;
     else setRoute(r);
   };
@@ -30,6 +34,9 @@ export function useRoute(): [Route, (r: Route) => void] {
 }
 
 export function go(r: Route) {
-  const hash = r.view === "list" ? "#/" : `#/post/${encodeURIComponent(r.slug)}`;
-  window.location.hash = hash;
+  window.location.hash = toHash(r);
+}
+
+export function postHref(id: number): string {
+  return `#/post/${id}`;
 }

@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { search, subscribeSearch } from "@/lib/search";
 import { go } from "@/lib/route";
 import { useLayout } from "@/lib/layout";
-import { collectionColor } from "@/lib/colors";
+import { collectionColor, useColorVersion } from "@/lib/colors";
 import { fromRow, setPostStatus, type PostRow } from "@/lib/posts";
 import type { Post } from "@/types";
 
@@ -18,18 +18,45 @@ interface Props {
   currentPostId: number | null;
 }
 
+const LAST_COLLECTION_KEY = "verbatim:lastCollection";
+
 export function CommandPalette({ currentPostId }: Props) {
+  useColorVersion();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const mode: Mode = q.startsWith("/") ? "commands" : "search";
+  // Empty query OR leading "/" → commands. Anything else → search.
+  const mode: Mode = q.length === 0 || q.startsWith("/") ? "commands" : "search";
+  const commandQuery = q.startsWith("/") ? q.slice(1).trim().toLowerCase() : "";
   const [, , toggleAuthorMode] = useLayout();
 
-  const allPosts = useLiveQuery(() => db.posts.toArray(), [], [] as Post[]);
+  const allPosts = useLiveQuery(
+    () => db.posts.orderBy("updatedAt").reverse().toArray(),
+    [],
+    [] as Post[],
+  );
   const knownCollections = useMemo(() => {
     const s = new Set<string>();
     for (const p of allPosts) if (p.type) s.add(p.type);
     return [...s].sort();
   }, [allPosts]);
+
+  // Default collection for a quick ⌘K → Enter new post:
+  //   1. Currently-open post's type
+  //   2. Last collection the user wrote in (localStorage)
+  //   3. Most-recently updated post's type
+  //   4. First known collection
+  //   5. Hard fallback
+  const defaultCollection = useMemo(() => {
+    if (currentPostId != null) {
+      const cur = allPosts.find((p) => p.id === currentPostId);
+      if (cur?.type) return cur.type;
+    }
+    const remembered = typeof localStorage !== "undefined" ? localStorage.getItem(LAST_COLLECTION_KEY) : null;
+    if (remembered && knownCollections.includes(remembered)) return remembered;
+    if (allPosts[0]?.type) return allPosts[0].type;
+    if (knownCollections[0]) return knownCollections[0];
+    return "hokum";
+  }, [currentPostId, allPosts, knownCollections]);
 
   useSyncExternalStore(
     (cb) => subscribeSearch(cb),
@@ -44,9 +71,9 @@ export function CommandPalette({ currentPostId }: Props) {
     "mod+shift+n",
     (e) => {
       e.preventDefault();
-      void newPost(knownCollections[0] ?? "hokum");
+      void newPost(defaultCollection);
     },
-    [knownCollections.join("|")],
+    [defaultCollection],
   );
   useHotkeys("escape", () => setOpen(false), { enabled: open });
 
@@ -73,8 +100,9 @@ export function CommandPalette({ currentPostId }: Props) {
     }
     const post = fromRow(data as PostRow);
     await db.posts.put({ ...post, syncedAt: Date.now(), dirty: false });
+    localStorage.setItem(LAST_COLLECTION_KEY, type);
     setOpen(false);
-    go({ view: "post", slug: post.slug });
+    go({ view: "post", id: post.id });
   }
 
   async function publishCurrent() {
@@ -82,6 +110,69 @@ export function CommandPalette({ currentPostId }: Props) {
     await setPostStatus(currentPostId, "published");
     setOpen(false);
   }
+
+  // Build the full command list, then manually filter by commandQuery.
+  // The first matching item is what cmdk auto-highlights, so we put the
+  // primary "New post in {default}" first.
+  type CommandRow = {
+    key: string;
+    label: string;
+    color?: string;
+    icon?: React.ReactNode;
+    hint?: string;
+    onSelect: () => void;
+  };
+
+  const otherCollections = knownCollections.filter((c) => c !== defaultCollection);
+
+  const allCommands: CommandRow[] = [
+    {
+      key: "new-default",
+      label: `New post${defaultCollection ? ` in ${defaultCollection}` : ""}`,
+      color: defaultCollection ? collectionColor(defaultCollection) : undefined,
+      icon: <FilePlus02 className="size-4" />,
+      hint: "⌘⇧N",
+      onSelect: () => void newPost(defaultCollection),
+    },
+    ...otherCollections.map<CommandRow>((c) => ({
+      key: `new-${c}`,
+      label: `New post in ${c}`,
+      color: collectionColor(c),
+      icon: <FilePlus02 className="size-4" />,
+      onSelect: () => void newPost(c),
+    })),
+    {
+      key: "new-collection",
+      label: "New post in new collection…",
+      icon: <FilePlus02 className="size-4" />,
+      onSelect: () => {
+        const name = window.prompt("New collection name");
+        if (name) void newPost(name.trim());
+      },
+    },
+    {
+      key: "author-mode",
+      label: "Toggle author mode",
+      hint: "⌘\\",
+      onSelect: () => {
+        toggleAuthorMode();
+        setOpen(false);
+      },
+    },
+    ...(currentPostId != null
+      ? [
+          {
+            key: "publish",
+            label: "Publish current post",
+            onSelect: () => void publishCurrent(),
+          } as CommandRow,
+        ]
+      : []),
+  ];
+
+  const filteredCommands = commandQuery
+    ? allCommands.filter((c) => fuzzyMatch(c.label, commandQuery))
+    : allCommands;
 
   if (!open) return null;
 
@@ -101,7 +192,7 @@ export function CommandPalette({ currentPostId }: Props) {
               autoFocus
               placeholder={
                 mode === "commands"
-                  ? "Type a command…"
+                  ? "Type a command, or press Enter to create a new post"
                   : "Search posts… (type / for commands)"
               }
               value={q}
@@ -112,46 +203,28 @@ export function CommandPalette({ currentPostId }: Props) {
 
           <Command.List className="max-h-[60vh] min-h-[120px] overflow-y-auto p-1.5">
             <Command.Empty className="px-3 py-8 text-center text-sm text-tertiary">
-              {mode === "search" ? "No results." : "No commands."}
+              {mode === "search" ? "No results." : "No matching commands."}
             </Command.Empty>
 
             {mode === "commands" && (
               <Command.Group>
-                {knownCollections.map((c) => (
+                {filteredCommands.map((c) => (
                   <Item
-                    key={c}
-                    icon={<FilePlus02 className="size-4" />}
-                    label={`New post in ${c}`}
-                    color={collectionColor(c)}
-                    onSelect={() => void newPost(c)}
+                    key={c.key}
+                    label={c.label}
+                    color={c.color}
+                    icon={c.icon}
+                    hint={c.hint}
+                    onSelect={c.onSelect}
                   />
                 ))}
-                <Item
-                  icon={<FilePlus02 className="size-4" />}
-                  label="New post in new collection…"
-                  onSelect={() => {
-                    const name = window.prompt("New collection name");
-                    if (name) void newPost(name.trim());
-                  }}
-                />
-                <Item
-                  label="Toggle author mode"
-                  hint="⌘\\"
-                  onSelect={() => {
-                    toggleAuthorMode();
-                    setOpen(false);
-                  }}
-                />
-                {currentPostId != null && (
-                  <Item label="Publish current post" onSelect={() => void publishCurrent()} />
-                )}
               </Command.Group>
             )}
 
             {mode === "search" && q && (
               <Command.Group heading="Posts">
                 {results.map((r) => {
-                  const slug = (r as unknown as { slug?: string }).slug ?? "";
+                  const id = Number(r.id);
                   const status = (r as unknown as { status?: string | null }).status;
                   const type = (r as unknown as { type?: string }).type;
                   return (
@@ -161,7 +234,7 @@ export function CommandPalette({ currentPostId }: Props) {
                       color={type ? collectionColor(type) : undefined}
                       hint={status === "draft" ? "draft" : undefined}
                       onSelect={() => {
-                        if (slug) go({ view: "post", slug });
+                        go({ view: "post", id });
                         setOpen(false);
                       }}
                     />
@@ -176,6 +249,18 @@ export function CommandPalette({ currentPostId }: Props) {
       </div>
     </div>
   );
+}
+
+// Lightweight subsequence match: chars of `q` appear in order inside `label`.
+function fuzzyMatch(label: string, q: string): boolean {
+  const haystack = label.toLowerCase();
+  if (haystack.includes(q)) return true;
+  let i = 0;
+  for (const ch of haystack) {
+    if (ch === q[i]) i++;
+    if (i === q.length) return true;
+  }
+  return false;
 }
 
 function Footer() {

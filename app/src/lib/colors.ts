@@ -1,8 +1,18 @@
 // Deterministic Tailwind-500-ish color per collection name.
-// Stays stable across reloads; new collections pick the next free slot
-// by hashing the name.
+// Users can override via collection_meta in Supabase; overrides live in a
+// module-level map populated from Dexie. `useColorVersion` subscribes
+// components to re-render when the map changes.
 
-const PALETTE: { name: string; hex: string }[] = [
+import { useSyncExternalStore } from "react";
+import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
+
+export interface Swatch {
+  name: string;
+  hex: string;
+}
+
+export const PALETTE: Swatch[] = [
   { name: "red", hex: "#ef4444" },
   { name: "orange", hex: "#f97316" },
   { name: "amber", hex: "#f59e0b" },
@@ -22,7 +32,7 @@ const PALETTE: { name: string; hex: string }[] = [
   { name: "rose", hex: "#f43f5e" },
 ];
 
-// FNV-1a 32-bit, plenty good for this.
+// FNV-1a 32-bit
 function hash(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {
@@ -32,7 +42,72 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
+const overrides = new Map<string, string>();
+const listeners = new Set<() => void>();
+let version = 0;
+
+function emit() {
+  version++;
+  for (const l of listeners) l();
+}
+
 export function collectionColor(name: string | null | undefined): string {
-  if (!name) return "#737373"; // neutral-500 fallback
+  if (!name) return "#737373";
+  const over = overrides.get(name);
+  if (over) return over;
   return PALETTE[hash(name) % PALETTE.length].hex;
+}
+
+export function isCollectionColorOverridden(name: string): boolean {
+  return overrides.has(name);
+}
+
+export async function setCollectionColor(name: string, hex: string): Promise<void> {
+  const now = Date.now();
+  overrides.set(name, hex);
+  await db.collectionMeta.put({ name, color: hex, updatedAt: now });
+  emit();
+  const { error } = await supabase
+    .from("collection_meta")
+    .upsert({ name, color: hex })
+    .select();
+  if (error) console.error("setCollectionColor failed:", error);
+}
+
+export async function clearCollectionColor(name: string): Promise<void> {
+  overrides.delete(name);
+  await db.collectionMeta.delete(name);
+  emit();
+  const { error } = await supabase.from("collection_meta").delete().eq("name", name);
+  if (error) console.error("clearCollectionColor failed:", error);
+}
+
+// Wire Dexie → in-memory map. Called from App on mount.
+let installed = false;
+export async function installColorOverrides() {
+  if (installed) return;
+  installed = true;
+  const rows = await db.collectionMeta.toArray();
+  overrides.clear();
+  for (const r of rows) overrides.set(r.name, r.color);
+  emit();
+}
+
+// Called by realtime + sync code when remote rows arrive / are removed.
+export function rememberColor(name: string, color: string | null) {
+  if (color == null) overrides.delete(name);
+  else overrides.set(name, color);
+  emit();
+}
+
+export function useColorVersion(): number {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => {
+        listeners.delete(cb);
+      };
+    },
+    () => version,
+  );
 }

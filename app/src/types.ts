@@ -22,6 +22,12 @@ export interface Post {
   dirty?: boolean;
 }
 
+export interface CollectionMeta {
+  name: string;
+  color: string;
+  updatedAt: number;
+}
+
 export interface PostVersion {
   id: string;
   postId: number;
