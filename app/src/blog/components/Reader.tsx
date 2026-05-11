@@ -62,20 +62,6 @@ function firstParagraph(md: string, maxLen = 220): string {
   return "";
 }
 
-function useReadingProgress(): number {
-  const [pct, setPct] = useState(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const h = document.documentElement;
-      const max = h.scrollHeight - h.clientHeight;
-      setPct(max > 0 ? Math.min(100, (h.scrollTop / max) * 100) : 0);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return pct;
-}
 
 export function Reader({ slug }: Props) {
   const [, _navigate] = useBlogRoute(); // subscribe so re-renders propagate
@@ -86,7 +72,6 @@ export function Reader({ slug }: Props) {
   const authorName = useSetting<string>("author.name", "Ghaith Ayadi");
   const authorTagline = useSetting<string>("author.tagline", "");
   const authorLocation = useSetting<string>("author.location", "");
-  const progress = useReadingProgress();
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +162,7 @@ export function Reader({ slug }: Props) {
             <span>{fmtDate(post.publishedAt)}</span>
           </>
         }
-        progress={progress}
+        showProgress
       />
 
       <article className="blog-article">

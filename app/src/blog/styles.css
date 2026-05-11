@@ -105,14 +105,7 @@
   justify-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   color: var(--ink);
-}
-.blog-topbar__dot {
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
 }
 .blog-topbar__back {
   background: none;
@@ -134,7 +127,7 @@
   bottom: -1px; /* sits on top of the 1px border */
   height: 2px;
   background: var(--ink);
-  transition: width 0.05s linear;
+  will-change: width;
 }
 
 /* ---------- hero ---------- */
