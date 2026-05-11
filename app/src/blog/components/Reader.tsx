@@ -11,6 +11,7 @@ interface Props {
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 function fmtDate(ms: number | null | undefined): string {
   if (ms == null) return "—";
   const d = new Date(ms);
@@ -25,10 +26,40 @@ function titleWithLastEm(title: string): React.ReactNode {
   const last = words.pop()!;
   return (
     <>
-      {words.join(" ") + " "}
+      {words.join(" ")}{" "}
       <em>{last}</em>
     </>
   );
+}
+
+/** First paragraph of body content as a dek fallback. */
+function firstParagraph(md: string, maxLen = 220): string {
+  if (!md) return "";
+  for (const block of md.split(/\n{2,}/)) {
+    const t = block.trim();
+    if (!t) continue;
+    // Skip headings, lists, blockquotes, code fences.
+    if (/^([#`>]|-{1,2}\s|\*\s|\d+\.\s|```)/.test(t)) continue;
+    const flat = t.replace(/\s+/g, " ").replace(/[*_`]/g, "").trim();
+    if (flat.length <= maxLen) return flat;
+    return flat.slice(0, maxLen).replace(/\s+\S*$/, "") + "…";
+  }
+  return "";
+}
+
+function ReadingProgress() {
+  const [pct, setPct] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      setPct(max > 0 ? Math.min(100, (h.scrollTop / max) * 100) : 0);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return <div className="blog-progress" style={{ width: `${pct}%` }} />;
 }
 
 export function Reader({ slug }: Props) {
@@ -37,9 +68,12 @@ export function Reader({ slug }: Props) {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch on slug change + reset to top.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setPost(null);
+    window.scrollTo({ top: 0, behavior: "instant" });
     void (async () => {
       const p = await fetchPostBySlug(slug);
       if (cancelled) return;
@@ -50,6 +84,15 @@ export function Reader({ slug }: Props) {
       cancelled = true;
     };
   }, [slug]);
+
+  // Tab title (SEO + nicety).
+  useEffect(() => {
+    const prior = document.title;
+    if (post?.title) document.title = `${post.title} — Verbatim`;
+    return () => {
+      document.title = prior;
+    };
+  }, [post?.title]);
 
   // Same-collection prev/next, sorted by published_at desc.
   const peers = useMemo(() => {
@@ -74,6 +117,18 @@ export function Reader({ slug }: Props) {
             ← Index
           </button>
         </div>
+        <div
+          style={{
+            padding: "120px 0",
+            textAlign: "center",
+            color: "var(--mute)",
+            fontSize: 12,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+          }}
+        >
+          Loading…
+        </div>
       </div>
     );
   }
@@ -96,9 +151,13 @@ export function Reader({ slug }: Props) {
   }
 
   const rtMin = readTime(post.wordCount);
+  const dek = post.excerpt?.trim() || firstParagraph(post.content);
+  const prettyPermalink = `verbatim/${colDisplay.toLowerCase().replace(/\s+/g, "-")}/${post.slug}`;
 
   return (
     <div className="blog-app">
+      <ReadingProgress />
+
       <div className="blog-reader-bar">
         <button className="back" onClick={() => navigate({ view: "home" })}>
           ← Index
@@ -109,7 +168,7 @@ export function Reader({ slug }: Props) {
           </span>
         </div>
         <div className="reader-meta">
-          <span>{rtMin > 0 ? `${rtMin} min read` : "—"}</span>
+          {rtMin > 0 && <span>{rtMin} min read</span>}
           <span>{fmtDate(post.publishedAt)}</span>
         </div>
       </div>
@@ -117,13 +176,11 @@ export function Reader({ slug }: Props) {
       <article className="blog-article">
         <div className="a-eyebrow">
           <span>{colDisplay}</span>
-          {post.slug && <span style={{ color: "var(--mute-2)" }}>·</span>}
-          {post.slug && <b>{post.slug}</b>}
         </div>
 
         <h1>{titleWithLastEm(post.title)}</h1>
 
-        {post.excerpt && <p className="dek">{post.excerpt}</p>}
+        {dek && <p className="dek">{dek}</p>}
 
         <div className="blog-byline">
           <div className="avatar">A</div>
@@ -131,20 +188,51 @@ export function Reader({ slug }: Props) {
             <span className="by-name">Ayadi Ghaith</span>
             <span className="by-sep">·</span>
             <span>{fmtDate(post.publishedAt)}</span>
+            {rtMin > 0 && (
+              <>
+                <span className="by-sep">·</span>
+                <span>{rtMin} min read</span>
+              </>
+            )}
           </div>
           <div className="by-right">
             <a
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}%20${encodeURIComponent(window.location.href)}`}
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}%20${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`}
               target="_blank"
-              rel="noreferrer"
+              rel="noreferrer noopener"
             >
               Share
+            </a>
+            <a
+              href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`}
+            >
+              Email
             </a>
           </div>
         </div>
 
         <div className="blog-prose">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ href, children, ...rest }) => {
+                const external =
+                  !!href && /^https?:\/\//i.test(href) && !href.includes(window.location.host);
+                return (
+                  <a
+                    href={href}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noreferrer noopener" : undefined}
+                    {...rest}
+                  >
+                    {children}
+                  </a>
+                );
+              },
+            }}
+          >
+            {post.content}
+          </ReactMarkdown>
         </div>
       </article>
 
@@ -159,38 +247,46 @@ export function Reader({ slug }: Props) {
             <span className="value">{post.wordCount.toLocaleString()}</span>
           </div>
         )}
+        {post.publishedAt && (
+          <div className="row">
+            <span className="label">Published</span>
+            <span className="value">{fmtDate(post.publishedAt)}</span>
+          </div>
+        )}
         <div className="row">
           <span className="label">Permalink</span>
-          <span className="value">/p/{post.slug}</span>
+          <span className="value">{prettyPermalink}</span>
         </div>
       </div>
 
-      <div className="blog-nextprev">
-        {prev ? (
-          <button
-            type="button"
-            className="blog-np prev"
-            onClick={() => navigate({ view: "post", slug: prev.slug })}
-          >
-            <div className="npl">← Previous</div>
-            <div className="npt">{prev.title || "Untitled"}</div>
-          </button>
-        ) : (
-          <span />
-        )}
-        {next ? (
-          <button
-            type="button"
-            className="blog-np next"
-            onClick={() => navigate({ view: "post", slug: next.slug })}
-          >
-            <div className="npl">Next →</div>
-            <div className="npt">{next.title || "Untitled"}</div>
-          </button>
-        ) : (
-          <span />
-        )}
-      </div>
+      {(prev || next) && (
+        <div className="blog-nextprev">
+          {prev ? (
+            <button
+              type="button"
+              className="blog-np prev"
+              onClick={() => navigate({ view: "post", slug: prev.slug })}
+            >
+              <div className="npl">← Previous</div>
+              <div className="npt">{prev.title || "Untitled"}</div>
+            </button>
+          ) : (
+            <span />
+          )}
+          {next ? (
+            <button
+              type="button"
+              className="blog-np next"
+              onClick={() => navigate({ view: "post", slug: next.slug })}
+            >
+              <div className="npl">Next →</div>
+              <div className="npt">{next.title || "Untitled"}</div>
+            </button>
+          ) : (
+            <span />
+          )}
+        </div>
+      )}
 
       <Colophon />
     </div>
