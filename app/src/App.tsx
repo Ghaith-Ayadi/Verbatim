@@ -44,14 +44,22 @@ function Shell() {
     };
   }, []);
 
-  useHotkeys("mod+\\", (e) => {
-    e.preventDefault();
-    toggleAuthorMode();
-  });
-  useHotkeys("mod+shift+l", (e) => {
-    e.preventDefault();
-    toggleTheme();
-  });
+  useHotkeys(
+    "mod+\\",
+    (e) => {
+      e.preventDefault();
+      toggleAuthorMode();
+    },
+    { enableOnFormTags: true, enableOnContentEditable: true },
+  );
+  useHotkeys(
+    "mod+shift+l",
+    (e) => {
+      e.preventDefault();
+      toggleTheme();
+    },
+    { enableOnFormTags: true, enableOnContentEditable: true },
+  );
 
   const currentPost = useLiveQuery(
     () => (route.view === "post" ? db.posts.get(route.id) : undefined),
@@ -72,6 +80,7 @@ function Shell() {
       e.preventDefault();
       if (currentPost) await snapshotVersion(currentPost, "user", "Manual snapshot");
     },
+    { enableOnFormTags: true, enableOnContentEditable: true },
     [currentPost?.id, currentPost?.content],
   );
 

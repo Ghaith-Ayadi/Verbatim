@@ -11,6 +11,9 @@ import { useLayout } from "@/lib/layout";
 import { collectionDisplay } from "@/lib/collections";
 import { fromRow, setPostStatus, type PostRow } from "@/lib/posts";
 import { toggleTheme, useTheme } from "@/lib/theme";
+import { createCollection } from "@/lib/collections";
+import { NewCollectionDialog } from "@/components/NewCollectionDialog";
+import { setActiveCollection } from "@/lib/activeCollection";
 import type { Collection, Post } from "@/types";
 
 type Mode = "search" | "commands";
@@ -24,6 +27,8 @@ const LAST_COLLECTION_KEY = "verbatim:lastCollection";
 export function CommandPalette({ currentPostId }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  // null = closed, {withPost} = open with that mode
+  const [newCollection, setNewCollection] = useState<null | { withPost: boolean }>(null);
   const mode: Mode = q.length === 0 || q.startsWith("/") ? "commands" : "search";
   const commandQuery = q.startsWith("/") ? q.slice(1).trim().toLowerCase() : "";
   const [, , toggleAuthorMode] = useLayout();
@@ -68,7 +73,7 @@ export function CommandPalette({ currentPostId }: Props) {
       e.preventDefault();
       setOpen((o) => !o);
     },
-    { enableOnFormTags: true },
+    { enableOnFormTags: true, enableOnContentEditable: true },
   );
   useHotkeys(
     "mod+shift+n",
@@ -76,10 +81,23 @@ export function CommandPalette({ currentPostId }: Props) {
       e.preventDefault();
       void newPost(defaultCollection);
     },
-    { enableOnFormTags: true },
+    { enableOnFormTags: true, enableOnContentEditable: true },
     [defaultCollection],
   );
-  useHotkeys("escape", () => setOpen(false), { enabled: open, enableOnFormTags: true });
+  useHotkeys(
+    "mod+shift+p",
+    (e) => {
+      e.preventDefault();
+      void publishCurrent();
+    },
+    { enableOnFormTags: true, enableOnContentEditable: true },
+    [currentPostId],
+  );
+  useHotkeys("escape", () => setOpen(false), {
+    enabled: open,
+    enableOnFormTags: true,
+    enableOnContentEditable: true,
+  });
 
   useEffect(() => {
     if (!open) setQ("");
@@ -160,14 +178,21 @@ export function CommandPalette({ currentPostId }: Props) {
       };
     }),
     {
-      key: "new-collection",
+      key: "new-collection-post",
       label: "New post in new collection…",
       icon: <FilePlus02 className="size-4" />,
       onSelect: () => {
-        const name = window.prompt(
-          "New collection name — prefix with an emoji to give it an icon",
-        );
-        if (name) void newPost(name.trim());
+        setOpen(false);
+        setNewCollection({ withPost: true });
+      },
+    },
+    {
+      key: "new-collection",
+      label: "New collection…",
+      icon: <FilePlus02 className="size-4" />,
+      onSelect: () => {
+        setOpen(false);
+        setNewCollection({ withPost: false });
       },
     },
     {
@@ -194,6 +219,7 @@ export function CommandPalette({ currentPostId }: Props) {
           {
             key: "publish",
             label: "Publish current post",
+            hint: "⌘⇧P",
             onSelect: () => void publishCurrent(),
           } as CommandRow,
         ]
@@ -204,9 +230,24 @@ export function CommandPalette({ currentPostId }: Props) {
     ? allCommands.filter((c) => fuzzyMatch(c.label, commandQuery))
     : allCommands;
 
-  if (!open) return null;
+  // The dialog and the palette are mutually exclusive but the dialog needs to
+  // outlive the palette closing animation.
+  const dialog = newCollection && (
+    <NewCollectionDialog
+      withPost={newCollection.withPost}
+      onClose={() => setNewCollection(null)}
+      onConfirm={async ({ name, emoji, withPost }) => {
+        await createCollection(name, { emoji });
+        setActiveCollection(name);
+        if (withPost) await newPost(name);
+      }}
+    />
+  );
+
+  if (!open) return <>{dialog}</>;
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-start justify-center bg-overlay/60 backdrop-blur-sm"
       onClick={() => setOpen(false)}
@@ -279,6 +320,8 @@ export function CommandPalette({ currentPostId }: Props) {
         </Command>
       </div>
     </div>
+    {dialog}
+    </>
   );
 }
 

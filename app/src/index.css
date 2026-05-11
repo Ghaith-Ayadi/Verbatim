@@ -75,6 +75,13 @@ a {
   border: 0 !important;
   box-shadow: none !important;
 }
+/* Stretch BlockNote across its parent so the prose column doesn't collapse to
+   the width of its longest unbreakable token. */
+.bn-container,
+.bn-editor,
+.bn-default-styles {
+  width: 100% !important;
+}
 .bn-editor {
   padding: 0 !important;
 }

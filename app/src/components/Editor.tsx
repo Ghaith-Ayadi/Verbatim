@@ -56,7 +56,7 @@ export function Editor({ post }: Props) {
   const editorRootRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <div className="mx-auto h-full max-w-[760px] px-10 py-8">
+    <div className="mx-auto w-full max-w-[760px] px-10 py-8">
       <PostNav post={post} />
       <input
         value={post.title}
@@ -64,7 +64,7 @@ export function Editor({ post }: Props) {
         placeholder="Untitled"
         className="mb-8 w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
       />
-      <div ref={editorRootRef}>
+      <div ref={editorRootRef} className="w-full">
         <BlockNoteView editor={editor} theme={theme} />
         <WikilinkAutocomplete rootRef={editorRootRef} />
       </div>
