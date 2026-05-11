@@ -11,6 +11,7 @@ import { uploadFile } from "@/lib/uploads";
 import { go } from "@/lib/route";
 import { collectionDisplay } from "@/lib/collections";
 import { useTheme } from "@/lib/theme";
+import { countWords, formatWordCount } from "@/lib/format";
 import type { Collection } from "@/types";
 import { WikilinkAutocomplete } from "@/components/WikilinkAutocomplete";
 import { ActionMenu } from "@/components/Menu";
@@ -40,13 +41,14 @@ export function Editor({ post }: Props) {
   }, [editor, post.id, post.content]);
 
   // Save on change: debounce 100ms to IDB; sync engine pushes to Supabase on 2s idle.
+  // Word count rides the same debounce — no separate pass.
   useEffect(() => {
     if (!editor) return;
     const unsub = editor.onChange(() => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
         const md = await editor.blocksToMarkdownLossy();
-        await updatePost(post.id, { content: md });
+        await updatePost(post.id, { content: md, wordCount: countWords(md) });
       }, SAVE_DEBOUNCE_MS);
     });
     return () => {
@@ -80,8 +82,11 @@ export function Editor({ post }: Props) {
           value={post.title}
           onChange={(e) => void updatePost(post.id, { title: e.target.value })}
           placeholder="Untitled"
-          className="mb-8 w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
+          className="w-full bg-transparent font-title text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
         />
+        <div className="mt-3 mb-8 text-xs text-quaternary">
+          {formatWordCount(post.wordCount)}
+        </div>
         <div ref={editorRootRef} className="w-full pb-24">
           <BlockNoteView editor={editor} theme={theme} />
           <WikilinkAutocomplete rootRef={editorRootRef} />

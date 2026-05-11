@@ -16,6 +16,7 @@ export interface Post {
   notionId: string | null;
   favorited: boolean;
   collectionSeq: number | null; // 1-based position inside its collection
+  wordCount: number | null;
   createdAt: number;
   updatedAt: number;
   // sync metadata, local-only

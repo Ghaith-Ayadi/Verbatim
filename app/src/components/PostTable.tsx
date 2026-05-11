@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Copy04, DotsHorizontal, Plus, SearchLg, Trash01 } from "@untitledui/icons";
 import type { Post } from "@/types";
 import { go } from "@/lib/route";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatWordCount } from "@/lib/format";
 import { deletePost, duplicatePost } from "@/lib/posts";
 import { ActionMenu } from "@/components/Menu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -63,7 +63,8 @@ export function PostTable({ posts, onAddPost }: Props) {
             <Th className="w-20">ID</Th>
             <Th>Title</Th>
             <Th className="w-28">Status</Th>
-            <Th className="w-36 text-right">Updated</Th>
+            <Th className="w-44">Length</Th>
+            <Th className="w-32 text-right">Updated</Th>
             <Th className="w-12" />
           </tr>
         </thead>
@@ -88,6 +89,7 @@ export function PostTable({ posts, onAddPost }: Props) {
             <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
             <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
             <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
+            <Td className="bg-primary group-hover:bg-secondary group-focus:bg-secondary" />
           </tr>
           {filtered.map((p) => (
             <tr
@@ -109,6 +111,9 @@ export function PostTable({ posts, onAddPost }: Props) {
               <Td>
                 <StatusBadge status={(p.status ?? "draft") as "draft" | "published"} />
               </Td>
+              <Td className="text-xs text-tertiary">
+                {formatWordCount(p.wordCount)}
+              </Td>
               <Td className="date-pill text-right text-xs text-quaternary">
                 {formatDate(p.updatedAt)}
               </Td>
@@ -125,7 +130,7 @@ export function PostTable({ posts, onAddPost }: Props) {
           {filtered.length === 0 && (
             <tr>
               <td
-                colSpan={5}
+                colSpan={6}
                 className="border-b border-secondary px-4 py-8 text-center text-sm text-tertiary last:border-b-0"
               >
                 {query ? "No matches." : "No posts in this filter."}

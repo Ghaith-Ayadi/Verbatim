@@ -12,6 +12,34 @@ export function formatDate(ms: number | null | undefined): string {
   return `${day} ${mon} ${yyyy}`;
 }
 
+/**
+ * Whitespace-tokenized word count after stripping common Markdown markers.
+ * Cheap enough to call on every keystroke (the editor already debounces it).
+ */
+export function countWords(md: string | null | undefined): number {
+  if (!md) return 0;
+  const stripped = md
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/[#*_>\-`\[\]()!]/g, " ");
+  let n = 0;
+  for (const tok of stripped.split(/\s+/)) if (tok) n++;
+  return n;
+}
+
+const WORDS_PER_MINUTE = 220;
+
+export function readTime(words: number | null | undefined): number {
+  if (!words || words <= 0) return 0;
+  return Math.max(1, Math.ceil(words / WORDS_PER_MINUTE));
+}
+
+export function formatWordCount(words: number | null | undefined): string {
+  const w = words ?? 0;
+  const min = readTime(w);
+  return `${w.toLocaleString()} Words · ${min} min read`;
+}
+
 export function relativeTime(ms: number): string {
   const dt = Date.now() - ms;
   const m = Math.floor(dt / 60_000);
