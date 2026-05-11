@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verbatim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #000000;
+    --ink-2: #1a1a1a;
+    --mute: #6b6b6b;
+    --mute-2: #b3b3b3;
+    --rule: #e6e6e6;
+    --paper: #ffffff;
+    --paper-2: #f4f4f4;
+    --accent: oklch(58% 0.13 145);
+    --serif: "Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --ui: "Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --measure: 38rem;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-optical-sizing: auto;
+    font-feature-settings: "kern", "liga", "calt", "onum";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--ink); color: var(--paper); }
+
+  /* ---------- Shell ---------- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 28px 40px 24px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .wordmark {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .wordmark::after {
+    content: "";
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-left: 8px;
+    transform: translateY(-3px);
+  }
+  .mast-nav {
+    font-family: var(--ui);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mute);
+    display: flex;
+    gap: 28px;
+  }
+  .mast-nav a:hover { color: var(--ink); }
+
+  /* ---------- Home: hero ---------- */
+  .hero {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 88px 40px 56px;
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(56px, 8vw, 112px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin: 0 0 28px;
+    color: var(--ink);
+  }
+  .hero h1 em {
+    font-weight: 300;
+    color: var(--ink-2);
+  }
+  .hero .lede {
+    font-size: 22px;
+    line-height: 1.45;
+    color: var(--ink-2);
+    max-width: 38rem;
+    margin: 0;
+    font-weight: 300;
+  }
+  .hero .meta {
+    margin-top: 40px;
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mute);
+    display: flex;
+    gap: 24px;
+  }
+  .hero .meta b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- Tabs ---------- */
+  .tabs-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+  .tabs {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    gap: 36px;
+    align-items: end;
+    height: 64px;
+  }
+  .tab {
+    position: relative;
+    padding: 22px 0 20px;
+    cursor: pointer;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--mute);
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    background: none; border: 0;
+  }
+  .tab .count {
+    font-family: var(--ui);
+    font-size: 11px;
+    color: var(--mute-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .tab:hover { color: var(--ink-2); }
+  .tab[aria-selected="true"] { color: var(--ink); }
+  .tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 1px;
+    background: var(--ink);
+  }
+  .tabs .spacer { flex: 1; }
+  .tabs .feed-mode {
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mute);
+    align-self: center;
+    display: flex; gap: 18px;
+  }
+  .feed-mode button {
+    background: none; border: 0; color: inherit; font: inherit;
+    cursor: pointer; letter-spacing: inherit; text-transform: inherit;
+    padding: 0;
+  }
+  .feed-mode button[aria-pressed="true"] { color: var(--ink); }
+
+  /* ---------- Collection header ---------- */
+  .col-head {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 56px 40px 36px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 40px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .col-head h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+  }
+  .col-head .col-desc {
+    font-size: 17px;
+    color: var(--mute);
+    max-width: 36rem;
+    margin: 0;
+    font-weight: 300;
+  }
+  .col-head .col-stat {
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mute);
+    text-align: right;
+    line-height: 1.8;
+  }
+  .col-head .col-stat b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Post list ---------- */
+  .feed {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 120px;
+  }
+  .post-row {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    align-items: baseline;
+    gap: 32px;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    transition: color .15s ease;
+  }
+  .post-row:hover .pr-title { color: var(--ink); }
+
+  .pr-id { display: none; }
+  .pr-tag { display: none; }
+  .pr-title {
+    font-family: var(--serif);
+    font-size: 24px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--ink-2);
+    display: flex; align-items: baseline; gap: 16px;
+  }
+  .pr-title .pr-dek {
+    font-size: 14px;
+    color: var(--mute);
+    font-weight: 300;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pr-id { transition: color .15s ease; }
+  .pr-tag {
+    font-family: var(--ui);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+  .pr-tag .dot {
+    display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    margin-right: 8px;
+    transform: translateY(-1px);
+  }
+  .pr-tag.draft .dot { background: var(--mute-2); }
+  .pr-date {
+    font-family: var(--ui);
+    font-size: 11px;
+    color: var(--mute);
+    letter-spacing: 0.04em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Featured row (first item in each collection) */
+  .post-row.featured {
+    grid-template-columns: 1fr 120px;
+    padding: 36px 0 40px;
+  }
+  .post-row.featured .pr-title {
+    font-size: 38px;
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    display: block;
+  }
+  .post-row.featured .pr-dek {
+    display: block;
+    white-space: normal;
+    overflow: visible;
+    font-size: 17px;
+    margin-top: 12px;
+    max-width: 40rem;
+    line-height: 1.45;
+  }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 56px 40px 80px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+  .colophon .right { display: flex; gap: 28px; }
+  .colophon a:hover { color: var(--ink); }
+
+  /* =========================================================
+     READER VIEW
+     ========================================================= */
+  .reader { display: none; }
+  body.reading .home { display: none; }
+  body.reading .reader { display: block; }
+
+  .reader-bar {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--ui);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--mute);
+  }
+  .reader-bar .back {
+    cursor: pointer;
+    background: none; border: 0;
+    color: var(--ink); font: inherit; padding: 0;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .reader-bar .back:hover { color: var(--mute); }
+  .reader-bar .crumb {
+    display: flex; gap: 12px; align-items: baseline;
+  }
+  .reader-bar .crumb .sep { color: var(--mute-2); }
+  .reader-bar .crumb .col-name { color: var(--ink); font-family: var(--serif); font-size: 14px; letter-spacing: -0.005em; }
+  .reader-bar .reader-meta {
+    display: flex; gap: 24px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .article {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 96px 32px 80px;
+  }
+
+  .a-eyebrow {
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin: 0 0 28px;
+    display: flex; gap: 14px;
+  }
+  .a-eyebrow b { color: var(--ink); font-weight: 500; }
+
+  .article h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(44px, 5.6vw, 64px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    margin: 0 0 24px;
+    text-wrap: balance;
+  }
+  .article h1 em { font-weight: 300; color: var(--ink-2); }
+
+  .article .dek {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 24px;
+    line-height: 1.35;
+    color: var(--ink-2);
+    margin: 0 0 48px;
+    text-wrap: pretty;
+  }
+
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    margin: 0 0 56px;
+    font-family: var(--ui);
+    font-size: 12px;
+    color: var(--mute);
+    letter-spacing: 0.02em;
+  }
+  .byline .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    display: grid; place-items: center;
+    font-family: var(--serif);
+    font-size: 16px;
+  }
+  .byline .by-name { color: var(--ink); font-weight: 500; }
+  .byline .by-sep { color: var(--mute-2); margin: 0 4px; }
+  .byline .by-right { margin-left: auto; display: flex; gap: 16px; }
+
+  .prose {
+    font-family: "Charter", "Source Serif 4", "Iowan Old Style", "Apple Garamond", Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: 21px;
+    line-height: 1.58;
+    letter-spacing: -0.003em;
+    color: #242424;
+    font-weight: 400;
+    hanging-punctuation: first last;
+  }
+  .prose > p { margin: 0 0 1.4em; text-wrap: pretty; }
+  .prose h2 {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1.25;
+    letter-spacing: -0.014em;
+    margin: 2.2em 0 0.5em;
+    color: #242424;
+  }
+  .prose h3 {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 1.8em 0 0.4em;
+    color: #242424;
+    letter-spacing: -0.01em;
+  }
+  .prose a {
+    text-decoration: underline;
+    text-decoration-color: var(--mute-2);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: text-decoration-color .15s ease;
+  }
+  .prose a:hover { text-decoration-color: var(--ink); }
+  .prose em { font-style: normal; }
+  .prose strong { font-weight: 600; }
+
+  .prose blockquote {
+    margin: 1.8em 0;
+    padding: 0 0 0 23px;
+    border-left: 3px solid #242424;
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.45;
+    color: #242424;
+    letter-spacing: -0.003em;
+  }
+  .prose blockquote cite {
+    display: block;
+    margin-top: 14px;
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-style: normal;
+    color: var(--mute);
+  }
+
+  .pullquote {
+    font-family: inherit;
+    font-weight: 400;
+    font-size: 30px;
+    line-height: 1.3;
+    letter-spacing: -0.012em;
+    text-align: left;
+    margin: 1.6em 0;
+    padding: 0 0 0 23px;
+    border-left: 3px solid #242424;
+    color: #242424;
+    text-wrap: pretty;
+  }
+  .pullquote::before, .pullquote::after { content: none; }
+
+  .prose ul, .prose ol { padding-left: 1.3em; margin: 1.4em 0; }
+  .prose li { margin: 0.4em 0; }
+  .prose ol { list-style: none; counter-reset: oli; padding-left: 0; }
+  .prose ol li {
+    counter-increment: oli;
+    padding-left: 2.4em;
+    position: relative;
+  }
+  .prose ol li::before {
+    content: counter(oli, decimal-leading-zero);
+    position: absolute;
+    left: 0; top: 0.15em;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--mute-2);
+    letter-spacing: 0.04em;
+  }
+
+  .prose code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--paper-2);
+    padding: 0.1em 0.4em;
+    border-radius: 2px;
+  }
+
+  .figure {
+    margin: 2em 0;
+  }
+  .figure .frame {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background:
+      repeating-linear-gradient(135deg, var(--paper-2) 0 8px, var(--paper) 8px 16px);
+    border: 1px solid var(--rule);
+    display: grid;
+    place-items: center;
+    color: var(--mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .figure figcaption {
+    font-family: var(--ui);
+    font-size: 12px;
+    color: var(--mute);
+    text-align: center;
+    margin-top: 14px;
+    font-family: var(--serif);
+  }
+
+  .ornament {
+    text-align: center;
+    margin: 3em 0;
+    color: var(--mute-2);
+    font-size: 18px;
+    letter-spacing: 1.4em;
+    padding-left: 1.4em;
+  }
+
+  .footnotes {
+    margin-top: 4em;
+    padding-top: 2em;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--mute);
+  }
+  .footnotes ol { padding-left: 0; }
+  .footnotes ol li::before { font-size: 10px; }
+  .footnotes h4 {
+    font-family: var(--ui);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 500;
+    margin: 0 0 18px;
+  }
+
+  /* Article footer */
+  .a-foot {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 24px 32px 80px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--ui);
+    font-size: 12px;
+    color: var(--mute);
+    letter-spacing: 0.04em;
+  }
+  .a-foot .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 14px 0;
+  }
+  .a-foot .row + .row { border-top: 1px solid var(--rule); }
+  .a-foot .row .label { text-transform: uppercase; letter-spacing: 0.14em; font-size: 10px; }
+  .a-foot .row .value { color: var(--ink); font-family: var(--serif); font-size: 16px; font-weight: 300; }
+
+  .nextprev {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .np {
+    border: 1px solid var(--rule);
+    padding: 24px;
+    cursor: pointer;
+    background: transparent;
+    text-align: left;
+    transition: background .2s ease;
+  }
+  .np:hover { border-color: var(--ink); }
+  .np .npl {
+    font-family: var(--ui);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 12px;
+  }
+  .np .npt {
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .np.next { text-align: right; }
+
+  /* responsive */
+  @media (max-width: 760px) {
+    .masthead { padding: 20px 22px; }
+    .hero { padding: 56px 22px 32px; }
+    .hero h1 { font-size: 56px; }
+    .tabs { padding: 0 22px; gap: 22px; height: 56px; }
+    .tabs .feed-mode { display: none; }
+    .col-head { padding: 36px 22px 24px; grid-template-columns: 1fr; gap: 16px; }
+    .col-head .col-stat { text-align: left; }
+    .feed { padding: 0 22px 80px; }
+    .post-row { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; }
+    .post-row .pr-date { font-size: 10px; text-align: left; }
+    .post-row .pr-title { font-size: 19px; }
+    .post-row .pr-title .pr-dek { display: none; }
+    .post-row.featured .pr-title { font-size: 28px; }
+    .article { padding: 56px 22px 48px; }
+    .reader-bar { padding: 14px 22px; }
+    .prose { font-size: 18px; }
+    .prose blockquote, .pullquote, .figure { margin-left: 0; margin-right: 0; }
+    .nextprev { grid-template-columns: 1fr; padding: 22px; }
+  }
+</style>
+</head>
+<body data-screen-label="01 Home">
+  <!-- ===================== HOME ===================== -->
+  <div class="home">
+    <header class="masthead">
+      <div class="wordmark">Verbatim</div>
+      <nav class="mast-nav">
+        <a href="#">Index</a>
+        <a href="#">About</a>
+        <a href="#">Subscribe</a>
+        <a href="#">RSS</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1>A reading <em>room.</em></h1>
+      <p class="lede">Long-form notes, briefs, and unfinished thoughts. Updated when there is something actually worth saying, and not before.</p>
+      <div class="meta">
+        <span><b>221</b> posts</span>
+        <span><b>4</b> collections</span>
+        <span>Est. <b>MMXXII</b></span>
+        <span>Last update <b>11 May 2026</b></span>
+      </div>
+    </section>
+
+    <div class="tabs-wrap">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="false" data-col="briefs">Briefs <span class="count">26</span></button>
+        <button class="tab" role="tab" aria-selected="true"  data-col="hokum">Hokum <span class="count">145</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-col="journal">Journal <span class="count">48</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-col="verbatim">Verbatim <span class="count">2</span></button>
+        <span class="spacer"></span>
+        <div class="feed-mode" role="group" aria-label="Sort">
+          <button aria-pressed="true">Latest</button>
+          <button aria-pressed="false">A–Z</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collection: Briefs -->
+    <section class="collection" data-col="briefs" hidden>
+      <header class="col-head">
+        <div>
+          <h2>Briefs</h2>
+          <p class="col-desc">Short, declarative notes. One idea at a time, written in under an hour.</p>
+        </div>
+        <div class="col-stat">
+          <div><b>26</b> entries</div>
+        </div>
+      </header>
+      <div class="feed">
+        <article class="post-row featured" data-post="b-26">
+          <div class="pr-id">BRF·26</div>
+          <div class="pr-title">
+            On the seduction of a clean inbox
+            <span class="pr-dek">Inbox zero is a performance of order, not a working condition. A short defense of the productive mess.</span>
+          </div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">09 May 2026</div>
+        </article>
+        <article class="post-row" data-post="b-25">
+          <div class="pr-id">BRF·25</div>
+          <div class="pr-title">A note on small commitments<span class="pr-dek">Daily, dull, and decisive — why the boring promise outperforms the grand one.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">04 May 2026</div>
+        </article>
+        <article class="post-row" data-post="b-24">
+          <div class="pr-id">BRF·24</div>
+          <div class="pr-title">The interview is the work<span class="pr-dek">Treat the conversation as the artifact, not the rehearsal for one.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">28 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="b-23">
+          <div class="pr-id">BRF·23</div>
+          <div class="pr-title">Against the second monitor<span class="pr-dek">An ergonomic argument for fewer pixels, not more.</span></div>
+          <div class="pr-tag draft"><span class="dot"></span>Draft</div>
+          <div class="pr-date">22 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="b-22">
+          <div class="pr-id">BRF·22</div>
+          <div class="pr-title">A short defense of paper<span class="pr-dek">It is slow, it is finite, it does not autocomplete. Three good things.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">11 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="b-21">
+          <div class="pr-id">BRF·21</div>
+          <div class="pr-title">The morning is the message<span class="pr-dek">What you do before 9am is, in some real sense, the only thing you do.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">02 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="b-20">
+          <div class="pr-id">BRF·20</div>
+          <div class="pr-title">On disagreeing well<span class="pr-dek">A small grammar of dissent for people who care about the answer more than the argument.</span></div>
+          <div class="pr-tag draft"><span class="dot"></span>Draft</div>
+          <div class="pr-date">26 Mar 2026</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Collection: Hokum -->
+    <section class="collection" data-col="hokum">
+      <header class="col-head">
+        <div>
+          <h2>Hokum</h2>
+          <p class="col-desc">Essays in the long tradition of being wrong about something at length. The main collection.</p>
+        </div>
+        <div class="col-stat">
+          <div><b>145</b> entries</div>
+        </div>
+      </header>
+      <div class="feed">
+        <article class="post-row featured" data-post="h-144">
+          <div class="pr-id">HKM·144</div>
+          <div class="pr-title">
+            On lattes
+            <span class="pr-dek">Three dollars for water and milk and a small theatre of competence. A field guide to the modern café and what it is, in fact, selling.</span>
+          </div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">11 May 2026</div>
+        </article>
+        <article class="post-row" data-post="h-143">
+          <div class="pr-id">HKM·143</div>
+          <div class="pr-title">On headlessness<span class="pr-dek">What gets lost when the UI is just one of the clients.</span></div>
+          <div class="pr-tag draft"><span class="dot"></span>Draft</div>
+          <div class="pr-date">11 May 2026</div>
+        </article>
+        <article class="post-row" data-post="h-142">
+          <div class="pr-id">HKM·142</div>
+          <div class="pr-title">On cost<span class="pr-dek">Price is not the same as cost, and cost is not the same as worth. A taxonomy.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">07 May 2026</div>
+        </article>
+        <article class="post-row" data-post="h-141">
+          <div class="pr-id">HKM·141</div>
+          <div class="pr-title">On pointlessness<span class="pr-dek">A defense of unproductive afternoons, badly drawn pictures, and projects that go nowhere.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">29 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="h-140">
+          <div class="pr-id">HKM·140</div>
+          <div class="pr-title">On Ψ and education reform<span class="pr-dek">If you cannot name the variable, you probably cannot fix the system.</span></div>
+          <div class="pr-tag draft"><span class="dot"></span>Draft</div>
+          <div class="pr-date">22 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="h-139">
+          <div class="pr-id">HKM·139</div>
+          <div class="pr-title">On antidepressants<span class="pr-dek">A non-clinical, non-comprehensive note from someone who has taken them and someone who hasn't.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">14 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="h-138">
+          <div class="pr-id">HKM·138</div>
+          <div class="pr-title">On french toast and strawmen<span class="pr-dek">An argument that uses breakfast to do most of its work, which is, I admit, a tell.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">08 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="h-137">
+          <div class="pr-id">HKM·137</div>
+          <div class="pr-title">Good design is not design<span class="pr-dek">It is, mostly, a series of confident deletions.</span></div>
+          <div class="pr-tag draft"><span class="dot"></span>Draft</div>
+          <div class="pr-date">01 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="h-136">
+          <div class="pr-id">HKM·136</div>
+          <div class="pr-title">On influence<span class="pr-dek">It always feels original until you find the book.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">25 Mar 2026</div>
+        </article>
+        <article class="post-row" data-post="h-135">
+          <div class="pr-id">HKM·135</div>
+          <div class="pr-title">A small theory of taste<span class="pr-dek">Taste is a memory of attention. You can train it.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">18 Mar 2026</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Collection: Journal -->
+    <section class="collection" data-col="journal" hidden>
+      <header class="col-head">
+        <div>
+          <h2>Journal</h2>
+          <p class="col-desc">Dated entries with no thesis. Mostly observation, mostly Saturday.</p>
+        </div>
+        <div class="col-stat">
+          <div><b>48</b> entries</div>
+        </div>
+      </header>
+      <div class="feed">
+        <article class="post-row featured" data-post="j-48">
+          <div class="pr-id">JNL·48</div>
+          <div class="pr-title">
+            The Saturday inventory
+            <span class="pr-dek">A list of small things noticed, in order, on a slow May morning. No tidy ending.</span>
+          </div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">10 May 2026</div>
+        </article>
+        <article class="post-row" data-post="j-47">
+          <div class="pr-id">JNL·47</div>
+          <div class="pr-title">Five blocks south of the office<span class="pr-dek">A bakery, a quarrel, and a man explaining the weather to nobody.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">03 May 2026</div>
+        </article>
+        <article class="post-row" data-post="j-46">
+          <div class="pr-id">JNL·46</div>
+          <div class="pr-title">Thursday, mostly grey<span class="pr-dek">Re-reading old emails for the wrong reasons.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">24 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="j-45">
+          <div class="pr-id">JNL·45</div>
+          <div class="pr-title">A short walk, badly timed<span class="pr-dek">It rained. I had no jacket. It was, in the end, fine.</span></div>
+          <div class="pr-tag draft"><span class="dot"></span>Draft</div>
+          <div class="pr-date">17 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="j-44">
+          <div class="pr-id">JNL·44</div>
+          <div class="pr-title">Two coffees, one conversation<span class="pr-dek">My friend M. on why he quit, in his words, mostly.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">09 Apr 2026</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Collection: Verbatim -->
+    <section class="collection" data-col="verbatim" hidden>
+      <header class="col-head">
+        <div>
+          <h2>Verbatim</h2>
+          <p class="col-desc">Pieces about this site itself — its making, its choices, its quiet revisions.</p>
+        </div>
+        <div class="col-stat">
+          <div><b>2</b> entries</div>
+        </div>
+      </header>
+      <div class="feed">
+        <article class="post-row featured" data-post="v-2">
+          <div class="pr-id">VRB·02</div>
+          <div class="pr-title">
+            A colophon, by way of apology
+            <span class="pr-dek">Newsreader at 20px, a measure of 38rem, and one accent color. Notes on the small decisions behind this site.</span>
+          </div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">01 Apr 2026</div>
+        </article>
+        <article class="post-row" data-post="v-1">
+          <div class="pr-id">VRB·01</div>
+          <div class="pr-title">Why I rebuilt the thing again<span class="pr-dek">For the fourth time. I have, at this point, no real defense.</span></div>
+          <div class="pr-tag"><span class="dot"></span>Published</div>
+          <div class="pr-date">14 Mar 2026</div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="colophon">
+      <div>© MMXXVI — Verbatim</div>
+      <div class="right">
+        <a href="#">Colophon</a>
+        <a href="#">RSS</a>
+        <a href="#">Email</a>
+        <a href="#">Mastodon</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===================== READER ===================== -->
+  <div class="reader" data-screen-label="02 Post">
+    <div class="reader-bar">
+      <button class="back" id="back">← Index</button>
+      <div class="crumb">
+        <span class="col-name" id="r-col">Hokum</span>
+      </div>
+      <div class="reader-meta">
+        <span id="r-read">8 min read</span>
+        <span id="r-date">11 May 2026</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <div class="a-eyebrow">
+        <span id="r-col-2">Hokum</span>
+      </div>
+
+      <h1 id="r-title">On <em>lattes</em></h1>
+      <p class="dek" id="r-dek">Three dollars for water and milk and a small theatre of competence. A field guide to the modern café — and what, exactly, it is selling you when it sells you a coffee.</p>
+
+      <div class="byline">
+        <div class="avatar">A</div>
+        <div>
+          <span class="by-name">Ayadi Ghaith</span>
+          <span class="by-sep">·</span>
+          <span>writing from a café that does, in fact, charge extra for oat milk</span>
+        </div>
+        <div class="by-right">
+          <a href="#">Share</a>
+          <a href="#">Save</a>
+        </div>
+      </div>
+
+      <div class="prose" id="r-body">
+        <p>There is a particular small ritual that happens, several million times a day, in cities you have heard of and a few you haven't. A person walks into a room that smells deliberately of beans, says a word in Italian that they have agreed, by group consensus, to mispronounce, and hands over the rough cost of a paperback in exchange for a paper cup of warm, slightly bitter liquid. They then sit down, sometimes, and consider this a small victory. I include myself in the count.</p>
+
+        <p>I want to be careful here. This is not going to be the essay you are bracing for. I have no interest in the line, repeated to the point of muscle memory by certain financial gentlemen, that the coffee is what is keeping you out of the property market. The arithmetic is silly and the politics is sillier. What I am interested in is the <em>thing</em> — the actual transaction, what it contains, and why we keep coming back to it even when we know, in the dim back of our heads, that we are paying for something we cannot quite name.</p>
+
+        <h2>The visible product</h2>
+
+        <p>The visible product is, of course, a beverage. It is mostly milk. The milk is mostly water. The water is, in the worst cases, also mostly water. Onto this we lay a thin stratum of espresso, an ounce or two, brewed under pressure for somewhere between twenty and thirty seconds. A trained barista will tell you that the difference between a good shot and a bad one is the matter of about four seconds of extraction time, and they are correct, and almost nobody can taste it. This is fine. The shot is not, mostly, what you are buying.</p>
+
+        <blockquote>
+          The café is the rare commercial space whose explicit product is consumed in roughly four minutes and whose actual product takes about forty.
+          <cite>— a friend, paraphrased, over the second of two</cite>
+        </blockquote>
+
+        <p>What you are buying, instead, is a permission slip. You are buying twenty minutes of legitimate stillness in a city that mostly does not allow it. You are buying a chair that is not your chair, a table that is not your table, in a room that has agreed, by long convention, not to ask you to leave. The coffee is the cover charge.</p>
+
+        <p class="pullquote">The coffee is the cover charge. The chair is the show.</p>
+
+        <h2>What the chair is doing</h2>
+
+        <p>The chair is doing a lot. It is, for one thing, not the chair at your desk, which has, over the last three years, become a kind of accusation. It is also not the chair at home, where someone may, with great affection and at the wrong time, ask you a small honest question. It is the third chair: the one in <a href="#">Ray Oldenburg's sense</a>, the one that doesn't belong to anyone in particular, and therefore briefly belongs to you.</p>
+
+        <p>The barista — and I have, in another life, been one — understands this perfectly. The good ones do a small choreography of unobtrusiveness, refill the water without being asked, and, crucially, never make eye contact when you are obviously crying into a laptop. This last skill is undervalued and, in my experience, the best baristas have it in the way that good bartenders do: as a professional kindness offered without comment.</p>
+
+        <figure class="figure">
+          <div class="frame">PLACEHOLDER — café interior, late morning</div>
+          <figcaption>Fig. 1 — A café somewhere in the 11th, photographed badly, at the wrong shutter speed, on purpose.</figcaption>
+        </figure>
+
+        <h2>The economics, briefly</h2>
+
+        <p>The unit economics of a small café are, famously, terrible. The margin on a single drink, once you account for the beans, the milk, the cup, the lid, the rent, the wages, the electricity, the slow attrition of every espresso machine ever built — is somewhere between sad and worse. The bakery case carries the room. The cold-brew bottles in the fridge carry the bakery case. The good café knows this and accepts it; the bad café tries to make up the difference by becoming, slowly and against its will, a co-working space.</p>
+
+        <ol>
+          <li>The single best decision a small café can make is to refuse, politely and from the beginning, to install a printer.</li>
+          <li>The second-best decision is to put the power outlets only on the back wall.</li>
+          <li>The third is to have at least one table that is, by design, a little too small for a laptop and just right for a saucer.</li>
+        </ol>
+
+        <p>None of this is mysterious to anyone who has spent five minutes thinking about it, and yet the small café persists. It persists because the alternative is worse. The alternative is a slightly cheaper drink, made slightly faster, served by a slightly less attentive person, in a slightly larger room owned by a slightly larger company. You can have that. It is, in fact, on most corners. You will notice that, when given a choice, most of us cross the street.</p>
+
+        <h3>Why we cross the street</h3>
+
+        <p>We cross the street because we are, in a small and recoverable way, lonely. Not lonely in the dramatic sense — the sense the magazines keep diagnosing and the apps keep monetizing — but lonely in the ordinary one, which is the condition of having a long quiet day and no obvious place to put yourself. The café is one of the few remaining institutions in a contemporary city that will sell you a brief solution to this problem, without comment, for under five dollars. Considered that way, it is the bargain of the century.</p>
+
+        <p class="ornament">· · ·</p>
+
+        <p>It is now, by the clock, the second hour I have been sitting here, and the barista has refilled my water twice without saying anything, and a man at the next table has been on the same paragraph of the same novel for forty-five minutes, and the espresso machine has hissed at intervals like a small contented animal. I have, in that time, paid for one drink. I will, in a minute, pay for another, and I will leave a tip that is roughly the cost of the drink itself, because I am not, in the end, an idiot, and because I know exactly what I have been buying.</p>
+
+        <p>It was never the latte.</p>
+
+        <div class="footnotes">
+          <h4>Notes</h4>
+          <ol>
+            <li>The "third place" framing is borrowed wholesale from Oldenburg's <em>The Great Good Place</em> (1989), which is, if anything, more relevant now than it was then. Worth the afternoon.</li>
+            <li>I am aware that some of the points above are made annually, by other people, in other publications. I do not claim novelty. I claim only that the chair is still, in my opinion, the show.</li>
+            <li>The barista, asked to comment on this piece, declined politely, and then refilled the water.</li>
+          </ol>
+        </div>
+      </div>
+    </article>
+
+    <div class="a-foot">
+      <div class="row"><span class="label">Filed under</span> <span class="value">Hokum · cafés · cities</span></div>
+      <div class="row"><span class="label">Words</span> <span class="value">1,184</span></div>
+      <div class="row"><span class="label">Revision</span> <span class="value">3 · 11 May 2026</span></div>
+      <div class="row"><span class="label">Permalink</span> <span class="value">verbatim/hokum/on-lattes</span></div>
+    </div>
+
+    <div class="nextprev">
+      <button class="np prev" id="prev">
+        <div class="npl">← Previous</div>
+        <div class="npt">On headlessness</div>
+      </button>
+      <button class="np next" id="next">
+        <div class="npl">Next →</div>
+        <div class="npt">On cost</div>
+      </button>
+    </div>
+
+    <footer class="colophon">
+      <div>© MMXXVI — Verbatim</div>
+      <div class="right">
+        <a href="#">Colophon</a>
+        <a href="#">RSS</a>
+        <a href="#">Email</a>
+      </div>
+    </footer>
+  </div>
+
+<script>
+  // -- Tab switching ---------------------------------------------------------
+  const tabs = document.querySelectorAll('.tab');
+  const cols = document.querySelectorAll('.collection');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
+    const target = t.dataset.col;
+    cols.forEach(c => c.hidden = c.dataset.col !== target);
+  }));
+
+  // -- Sort toggle (cosmetic) ------------------------------------------------
+  document.querySelectorAll('.feed-mode button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.feed-mode button')
+        .forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    });
+  });
+
+  // -- Open a post -----------------------------------------------------------
+  // We have one full reader template (HKM·144 / On lattes). For other posts,
+  // we re-skin the header/eyebrow/title/dek with their own metadata and reuse
+  // the body so the typography demo is visible from any entry.
+  const colNames = { b: 'Briefs', h: 'Hokum', j: 'Journal', v: 'Verbatim' };
+  const colPrefix = { b: 'BRF', h: 'HKM', j: 'JNL', v: 'VRB' };
+
+  function openPost(row) {
+    const id = row.dataset.post;
+    const [c, n] = id.split('-');
+    const title = row.querySelector('.pr-title');
+    const titleText = title.firstChild.textContent.trim();
+    const dek = title.querySelector('.pr-dek')?.textContent.trim() || '';
+    const date = row.querySelector('.pr-date')?.textContent.trim() || '';
+    const fullId = row.querySelector('.pr-id')?.textContent.trim() || '';
+
+    document.getElementById('r-col').textContent = colNames[c];
+    document.getElementById('r-col-2').textContent = colNames[c];
+    document.getElementById('r-date').textContent = date;
+
+    // Stylize title: wrap last word in <em> for tonal variety
+    const words = titleText.split(' ');
+    let html;
+    if (words.length > 1) {
+      const last = words.pop();
+      html = words.join(' ') + ' <em>' + last + '</em>';
+    } else {
+      html = '<em>' + titleText + '</em>';
+    }
+    document.getElementById('r-title').innerHTML = html;
+    document.getElementById('r-dek').textContent = dek || 'A short piece. Read on.';
+
+    document.body.classList.add('reading');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  document.querySelectorAll('.post-row').forEach(r => r.addEventListener('click', () => openPost(r)));
+
+  document.getElementById('back').addEventListener('click', () => {
+    document.body.classList.remove('reading');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
+  document.getElementById('prev').addEventListener('click', e => { e.preventDefault(); window.scrollTo({top:0,behavior:'smooth'}); });
+  document.getElementById('next').addEventListener('click', e => { e.preventDefault(); window.scrollTo({top:0,behavior:'smooth'}); });
+</script>
+</body>
+</html>
