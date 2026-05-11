@@ -4,23 +4,21 @@ interface Props {
   lastUpdate: number | null;
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 function fmtDate(ms: number | null): string {
   if (ms == null) return "—";
   const d = new Date(ms);
   const day = String(d.getDate()).padStart(2, "0");
-  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()];
-  return `${day} ${mon} ${d.getFullYear()}`;
+  return `${day} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export function Hero({ postCount, collectionCount, lastUpdate }: Props) {
   return (
     <section className="blog-hero">
-      <h1>
-        A reading <em>room.</em>
-      </h1>
-      <p className="lede">
-        Long-form notes, briefs, and unfinished thoughts. Updated when there is something
-        actually worth saying, and not before.
+      <p className="manifesto">
+        It's called Verbatim because none of it is edited. I don't edit what I write. If I don't
+        like what I said, I don't publish. No AI writing, no nonsense.
       </p>
       <div className="meta">
         <span>

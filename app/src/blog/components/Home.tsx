@@ -129,16 +129,15 @@ export function Home({ collections, posts }: Props) {
                   key={p.id}
                   href={postHref(p.slug)}
                   onClick={(e) => {
-                    // Allow cmd/ctrl-click to open in a new tab.
                     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
                     e.preventDefault();
                     navigateTo({ view: "post", slug: p.slug });
                   }}
                   className="blog-post-row"
                 >
-                  <div className="pr-title">
-                    {p.title || "Untitled"}
-                    {p.excerpt && <span className="pr-dek">{p.excerpt}</span>}
+                  <div>
+                    <div className="pr-title">{p.title || "Untitled"}</div>
+                    {p.excerpt && <div className="pr-dek">{p.excerpt}</div>}
                   </div>
                   <div className="pr-meta">
                     <span>{fmtDate(p.publishedAt)}</span>

@@ -62,7 +62,7 @@ function firstParagraph(md: string, maxLen = 220): string {
   return "";
 }
 
-function ReadingProgress() {
+function useReadingProgress(): number {
   const [pct, setPct] = useState(0);
   useEffect(() => {
     const onScroll = () => {
@@ -74,7 +74,7 @@ function ReadingProgress() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  return <div className="blog-progress" style={{ width: `${pct}%` }} />;
+  return pct;
 }
 
 export function Reader({ slug }: Props) {
@@ -86,6 +86,7 @@ export function Reader({ slug }: Props) {
   const authorName = useSetting<string>("author.name", "Ghaith Ayadi");
   const authorTagline = useSetting<string>("author.tagline", "");
   const authorLocation = useSetting<string>("author.location", "");
+  const progress = useReadingProgress();
 
   useEffect(() => {
     let cancelled = false;
@@ -167,8 +168,6 @@ export function Reader({ slug }: Props) {
 
   return (
     <div className="blog-app">
-      <ReadingProgress />
-
       <Topbar
         backLabel={colDisplay || "Index"}
         onBack={backToCollection}
@@ -178,6 +177,7 @@ export function Reader({ slug }: Props) {
             <span>{fmtDate(post.publishedAt)}</span>
           </>
         }
+        progress={progress}
       />
 
       <article className="blog-article">
@@ -208,20 +208,21 @@ export function Reader({ slug }: Props) {
           <div className="avatar">
             {(authorName ?? "A").trim().charAt(0).toUpperCase() || "A"}
           </div>
-          <div>
+          <div className="by-line-1">
             <span className="by-name">{authorName || "Author"}</span>
-            <span className="by-sep">·</span>
+            {(authorTagline || authorLocation) && (
+              <>
+                <span className="by-sep">·</span>
+                <span>{authorTagline || `Writing from ${authorLocation}`}</span>
+              </>
+            )}
+          </div>
+          <div className="by-line-2">
             <span>{fmtDate(post.publishedAt)}</span>
             {rtMin > 0 && (
               <>
                 <span className="by-sep">·</span>
                 <span>{rtMin} min read</span>
-              </>
-            )}
-            {(authorTagline || authorLocation) && (
-              <>
-                <span className="by-sep">·</span>
-                <span>{authorTagline || `Writing from ${authorLocation}`}</span>
               </>
             )}
           </div>

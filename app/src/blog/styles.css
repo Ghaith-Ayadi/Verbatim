@@ -44,16 +44,32 @@
   color: var(--paper);
 }
 
-/* reading progress bar on the post page */
-.blog-progress {
+/* Floating "Back to admin" pill, bottom-right of every public page,
+   only rendered when the user has touched /admin in this browser.
+   Colors are hardcoded — the FAB is a sibling of .blog-app, so the
+   scoped tokens don't reach it. */
+.blog-admin-fab {
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 2px;
-  background: var(--ink);
-  z-index: 10;
-  transition: width 0.05s linear;
+  bottom: 20px;
+  right: 20px;
+  z-index: 20;
+  background: #000;
+  color: #fff;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
+.blog-admin-fab:hover { opacity: 0.9; }
 
 /* ---------- topbar (used on every blog view) ---------- */
 .blog-topbar {
@@ -65,7 +81,8 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 18px 40px;
+  padding: 0 40px;
+  height: 56px;
 }
 .blog-topbar__left {
   justify-self: start;
@@ -86,6 +103,16 @@
 }
 .blog-topbar__brand {
   justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+.blog-topbar__dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
 }
 .blog-topbar__back {
   background: none;
@@ -101,53 +128,35 @@
 .blog-topbar__back:hover {
   color: var(--mute);
 }
-.blog-wordmark {
-  font-weight: 500;
-  font-size: 22px;
-  letter-spacing: -0.01em;
-}
-.blog-wordmark::after {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  margin-left: 8px;
-  transform: translateY(-3px);
+.blog-topbar__progress {
+  position: absolute;
+  left: 0;
+  bottom: -1px; /* sits on top of the 1px border */
+  height: 2px;
+  background: var(--ink);
+  transition: width 0.05s linear;
 }
 
 /* ---------- hero ---------- */
 .blog-hero {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 88px 40px 56px;
+  padding: 80px 40px 56px;
 }
-.blog-hero h1 {
-  font-weight: 400;
-  font-size: clamp(56px, 8vw, 112px);
-  line-height: 0.95;
-  letter-spacing: -0.035em;
-  margin: 0 0 28px;
+.blog-hero .manifesto {
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.25;
+  letter-spacing: -0.018em;
   color: var(--ink);
-}
-.blog-hero h1 em {
-  font-style: normal;
-  font-weight: 300;
-  color: var(--ink-2);
-}
-.blog-hero .lede {
-  font-size: 22px;
-  line-height: 1.45;
-  color: var(--ink-2);
   max-width: 38rem;
   margin: 0;
-  font-weight: 300;
+  font-weight: 400;
+  text-wrap: pretty;
 }
 .blog-hero .meta {
   margin-top: 40px;
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--mute);
@@ -163,7 +172,7 @@
 /* ---------- tabs ---------- */
 .blog-tabs-wrap {
   position: sticky;
-  top: 57px; /* sits under the topbar (~57px tall) */
+  top: 56px; /* below the 56px-tall topbar */
   z-index: 4;
   background: var(--paper);
   border-bottom: 1px solid var(--rule);
@@ -194,7 +203,7 @@
 }
 .blog-tab .count {
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--mute-2);
   font-variant-numeric: tabular-nums;
 }
@@ -218,7 +227,7 @@
 }
 .blog-tabs .feed-mode {
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mute);
@@ -267,7 +276,7 @@
 }
 .blog-col-head .col-stat {
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mute);
@@ -305,23 +314,20 @@
   line-height: 1.25;
   letter-spacing: -0.015em;
   color: var(--ink-2);
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
   font-weight: 400;
+  display: block;
 }
-.blog-post-row .pr-title .pr-dek {
-  font-size: 14px;
+.blog-post-row .pr-dek {
+  margin-top: 6px;
+  font-size: 17px;
   color: var(--mute);
   font-weight: 300;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.45;
+  max-width: 36rem;
 }
 .blog-post-row .pr-meta {
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--mute);
   letter-spacing: 0.04em;
   text-align: right;
@@ -345,7 +351,7 @@
   justify-content: space-between;
   align-items: baseline;
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mute);
@@ -414,7 +420,7 @@
 }
 .blog-article .a-eyebrow {
   font-family: var(--ui);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--mute);
@@ -449,9 +455,12 @@
 }
 
 .blog-byline {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 16px;
+  column-gap: 16px;
+  row-gap: 4px;
   padding: 20px 0;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
@@ -460,6 +469,25 @@
   font-size: 12px;
   color: var(--mute);
   letter-spacing: 0.02em;
+}
+.blog-byline .avatar {
+  grid-row: 1 / span 2;
+}
+.blog-byline .by-line-1 {
+  grid-column: 2;
+  grid-row: 1;
+}
+.blog-byline .by-line-2 {
+  grid-column: 2;
+  grid-row: 2;
+}
+.blog-byline .by-right {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  margin: 0;
+  display: flex;
+  gap: 16px;
+  align-items: center;
 }
 .blog-byline .avatar {
   width: 36px;
