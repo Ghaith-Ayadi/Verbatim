@@ -1,7 +1,16 @@
 import { useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronDown, ChevronRight, Folder, SearchLg, Star01 } from "@untitledui/icons";
+import {
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  Folder,
+  SearchLg,
+  Settings01,
+  Star01,
+} from "@untitledui/icons";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { db } from "@/lib/db";
 import { postHref, go } from "@/lib/route";
 import { collectionDisplay } from "@/lib/collections";
@@ -14,7 +23,10 @@ interface Props {
   currentId: number | null;
 }
 
+const ADMIN_KNOWN = "verbatim:admin-known";
+
 export function Sidebar({ currentId }: Props) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const posts = useLiveQuery(
     () => db.posts.orderBy("updatedAt").reverse().toArray(),
     [],
@@ -115,10 +127,31 @@ export function Sidebar({ currentId }: Props) {
         )}
       </div>
 
-      <div className="border-t border-secondary px-3 py-2 text-xs text-quaternary">
-        {posts.length} {posts.length === 1 ? "post" : "posts"} ·{" "}
-        {collectionRows.length} {collectionRows.length === 1 ? "collection" : "collections"}
+      <div className="flex flex-col gap-0 border-t border-secondary p-2">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-secondary transition hover:bg-tertiary hover:text-primary"
+        >
+          <Settings01 className="size-3.5 text-quaternary" />
+          <span>Settings</span>
+        </button>
+        <a
+          href="/"
+          onClick={() => {
+            try { localStorage.setItem(ADMIN_KNOWN, "1"); } catch {}
+          }}
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-secondary transition hover:bg-tertiary hover:text-primary"
+          title="Open the public site in this tab"
+        >
+          <Eye className="size-3.5 text-quaternary" />
+          <span>Preview site</span>
+        </a>
+        <div className="px-2 pt-2 text-[11px] text-quaternary">
+          {posts.length} {posts.length === 1 ? "post" : "posts"} ·{" "}
+          {collectionRows.length} {collectionRows.length === 1 ? "collection" : "collections"}
+        </div>
       </div>
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </aside>
   );
 }

@@ -1,12 +1,40 @@
+import { useEffect } from "react";
 import "./styles.css";
 import { useBlogData } from "./data";
 import { useBlogRoute } from "./route";
 import { Home } from "./components/Home";
 import { Reader } from "./components/Reader";
+import { AdminStrip } from "./components/AdminStrip";
+import { installSettings, useSetting } from "@/lib/settings";
 
 export function BlogApp() {
   const [route] = useBlogRoute();
   const { loading, collections, posts, error } = useBlogData();
+  const faviconUrl = useSetting<string | null>("favicon.url", null);
+  const siteTitle = useSetting<string>("site.title", "Verbatim");
+
+  useEffect(() => {
+    void installSettings();
+  }, []);
+
+  // Apply settings-controlled <link rel="icon"> and <title>.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (faviconUrl) {
+      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = faviconUrl;
+    }
+  }, [faviconUrl]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (siteTitle && route.view === "home") document.title = siteTitle;
+  }, [siteTitle, route.view]);
 
   if (error) {
     return (
@@ -38,9 +66,21 @@ export function BlogApp() {
     );
   }
 
-  if (route.view === "post") {
-    return <Reader slug={route.slug} />;
-  }
-  const initialActive = route.view === "collection" ? route.name : null;
-  return <Home collections={collections} posts={posts} initialActive={initialActive} />;
+  const body =
+    route.view === "post" ? (
+      <Reader slug={route.slug} />
+    ) : (
+      <Home
+        collections={collections}
+        posts={posts}
+        initialActive={route.view === "collection" ? route.name : null}
+      />
+    );
+
+  return (
+    <>
+      <AdminStrip />
+      {body}
+    </>
+  );
 }

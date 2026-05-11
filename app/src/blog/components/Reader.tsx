@@ -5,6 +5,7 @@ import { fetchPostBySlug, useBlogData, type BlogPost } from "@/blog/data";
 import { collectionHref, postHref, useBlogRoute } from "@/blog/route";
 import { Colophon } from "./Colophon";
 import { readTime } from "@/lib/format";
+import { useSetting } from "@/lib/settings";
 
 interface Props {
   slug: string;
@@ -81,6 +82,9 @@ export function Reader({ slug }: Props) {
   const { collections, posts } = useBlogData();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const authorName = useSetting<string>("author.name", "Ghaith Ayadi");
+  const authorTagline = useSetting<string>("author.tagline", "");
+  const authorLocation = useSetting<string>("author.location", "");
 
   // Fetch on slug change + reset to top.
   useEffect(() => {
@@ -214,15 +218,23 @@ export function Reader({ slug }: Props) {
         {dek && <p className="dek">{dek}</p>}
 
         <div className="blog-byline">
-          <div className="avatar">A</div>
+          <div className="avatar">
+            {(authorName ?? "A").trim().charAt(0).toUpperCase() || "A"}
+          </div>
           <div>
-            <span className="by-name">Ayadi Ghaith</span>
+            <span className="by-name">{authorName || "Author"}</span>
             <span className="by-sep">·</span>
             <span>{fmtDate(post.publishedAt)}</span>
             {rtMin > 0 && (
               <>
                 <span className="by-sep">·</span>
                 <span>{rtMin} min read</span>
+              </>
+            )}
+            {(authorTagline || authorLocation) && (
+              <>
+                <span className="by-sep">·</span>
+                <span>{authorTagline || `Writing from ${authorLocation}`}</span>
               </>
             )}
           </div>

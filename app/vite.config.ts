@@ -27,7 +27,9 @@ export default defineConfig(({ mode }) => {
           theme_color: "#0a0a0a",
           background_color: "#0a0a0a",
           display: "standalone",
-          start_url: "/",
+          // The installed PWA is the writing tool, not the public reader.
+          start_url: "/admin",
+          scope: "/",
           icons: [
             { src: "/favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
           ],
