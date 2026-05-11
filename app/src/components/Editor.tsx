@@ -48,12 +48,12 @@ export function Editor({ post }: Props) {
   const editorRootRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <div className="mx-auto h-full max-w-[760px] px-8 py-12">
+    <div className="mx-auto h-full max-w-[760px] px-10 py-12">
       <input
         value={post.title}
         onChange={(e) => void updatePost(post.id, { title: e.target.value })}
         placeholder="Untitled"
-        className="mb-6 w-full bg-transparent font-serif text-4xl outline-none placeholder:text-fg-faint"
+        className="mb-8 w-full bg-transparent font-serif text-4xl leading-tight text-primary outline-none placeholder:text-quaternary"
       />
       <div ref={editorRootRef}>
         <BlockNoteView editor={editor} theme="dark" />

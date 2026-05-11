@@ -1,10 +1,14 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Star01 } from "@untitledui/icons";
 import { db } from "@/lib/db";
 import type { Post, PostVersion } from "@/types";
 import { setPostStatus, toggleFavorite, updatePost } from "@/lib/posts";
 import { collectionColor } from "@/lib/colors";
 import { DiffModal } from "@/components/DiffModal";
+import { Input } from "@/components/base/input/input";
+import { Select } from "@/components/base/select/select";
+import { Button } from "@/components/base/buttons/button";
 
 interface Props {
   post: Post;
@@ -25,92 +29,111 @@ export function AttributePanel({ post }: Props) {
 
   const [diffFor, setDiffFor] = useState<PostVersion | null>(null);
 
+  const collectionItems = useMemo(
+    () =>
+      collections.map((c) => ({ id: c, label: c })),
+    [collections],
+  );
+  const statusItems = [
+    { id: "draft", label: "Draft" },
+    { id: "published", label: "Published" },
+  ];
+
   return (
-    <aside className="flex h-full w-[280px] flex-col gap-4 overflow-y-auto border-l border-border bg-bg-elev px-4 py-6 text-sm">
-      <Field label="slug">
-        <input
+    <aside className="flex h-full w-[300px] flex-col gap-5 overflow-y-auto border-l border-secondary bg-secondary px-5 py-6 text-sm">
+      <FieldStack label="Slug">
+        <Input
+          size="sm"
           value={post.slug}
-          onChange={(e) => void updatePost(post.id, { slug: e.target.value })}
-          className="w-full bg-transparent text-fg outline-none"
+          onChange={(v) => void updatePost(post.id, { slug: v })}
         />
-      </Field>
-      <Field label="collection">
-        <div className="flex items-center gap-2">
+      </FieldStack>
+
+      <FieldStack
+        label="Collection"
+        leading={
           <span
             aria-hidden
             className="inline-block h-2 w-2 rounded-full"
             style={{ backgroundColor: collectionColor(post.type) }}
           />
-          <input
-            value={post.type ?? ""}
-            list="collections-list"
-            placeholder="hokum, journal, brief…"
-            onChange={(e) => void updatePost(post.id, { type: e.target.value })}
-            className="w-full bg-transparent text-fg outline-none"
-          />
-          <datalist id="collections-list">
-            {collections.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-      </Field>
-      <Field label="status">
-        <select
-          value={post.status ?? "draft"}
-          onChange={(e) => void setPostStatus(post.id, e.target.value as "draft" | "published")}
-          className="w-full bg-transparent text-fg outline-none"
+        }
+      >
+        <Select
+          size="sm"
+          selectedKey={post.type ?? null}
+          onSelectionChange={(k) => void updatePost(post.id, { type: String(k ?? "") })}
+          items={collectionItems}
+          placeholder="—"
         >
-          <option value="draft">draft</option>
-          <option value="published">published</option>
-        </select>
-      </Field>
-      <Field label="published at">
-        <div className="text-fg-muted">
+          {(item) => <Select.Item id={item.id} label={item.label} />}
+        </Select>
+      </FieldStack>
+
+      <FieldStack label="Status">
+        <Select
+          size="sm"
+          selectedKey={post.status ?? "draft"}
+          onSelectionChange={(k) => void setPostStatus(post.id, k as "draft" | "published")}
+          items={statusItems}
+        >
+          {(item) => <Select.Item id={item.id} label={item.label} />}
+        </Select>
+      </FieldStack>
+
+      <FieldStack label="Published">
+        <div className="text-secondary">
           {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : "—"}
         </div>
-      </Field>
-      <Field label="category">
-        <input
-          value={post.category ?? ""}
-          onChange={(e) => void updatePost(post.id, { category: e.target.value })}
-          className="w-full bg-transparent text-fg outline-none"
-        />
-      </Field>
-      <Field label="favorite">
-        <button
-          onClick={() => void toggleFavorite(post.id)}
-          className="text-left text-fg-muted hover:text-fg"
-        >
-          {post.favorited ? "★ favorited" : "☆ unfavorited"}
-        </button>
-      </Field>
+      </FieldStack>
 
-      <div className="mt-4 border-t border-border pt-4">
-        <div className="mb-2 text-[11px] uppercase tracking-wide text-fg-faint">History</div>
+      <FieldStack label="Category">
+        <Input
+          size="sm"
+          value={post.category ?? ""}
+          onChange={(v) => void updatePost(post.id, { category: v })}
+        />
+      </FieldStack>
+
+      <div>
+        <Button
+          size="sm"
+          color={post.favorited ? "primary" : "tertiary"}
+          iconLeading={Star01}
+          onClick={() => void toggleFavorite(post.id)}
+        >
+          {post.favorited ? "Favorited" : "Favorite"}
+        </Button>
+      </div>
+
+      <div className="mt-2 border-t border-secondary pt-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-quaternary">
+          History
+        </div>
         {versions.length === 0 ? (
-          <div className="text-xs text-fg-faint">No versions yet.</div>
+          <div className="text-xs text-tertiary">No versions yet.</div>
         ) : (
           <ul className="space-y-1 text-xs">
             {versions.map((v) => (
               <li key={v.id}>
                 <button
                   onClick={() => setDiffFor(v)}
-                  className="flex w-full justify-between text-left text-fg-muted hover:text-fg"
+                  className="flex w-full justify-between text-left text-secondary transition hover:text-primary"
                 >
                   <span>
                     v{v.version}
                     {v.createdBy !== "user" && (
-                      <span className="ml-1 text-fg-faint">· {v.createdBy}</span>
+                      <span className="ml-1 text-quaternary">· {v.createdBy}</span>
                     )}
                   </span>
-                  <span className="text-fg-faint">{relative(v.createdAt)}</span>
+                  <span className="text-quaternary">{relative(v.createdAt)}</span>
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
       {diffFor && (
         <DiffModal post={post} initialVersion={diffFor} onClose={() => setDiffFor(null)} />
       )}
@@ -118,12 +141,23 @@ export function AttributePanel({ post }: Props) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function FieldStack({
+  label,
+  children,
+  leading,
+}: {
+  label: string;
+  children: React.ReactNode;
+  leading?: React.ReactNode;
+}) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-[11px] uppercase tracking-wide text-fg-faint">{label}</span>
+    <div>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-quaternary">
+        {leading}
+        {label}
+      </div>
       {children}
-    </label>
+    </div>
   );
 }
 
