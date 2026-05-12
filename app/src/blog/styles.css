@@ -300,8 +300,10 @@
   padding: 0 40px 120px;
 }
 .blog-post-row {
-  display: block;
-  padding: 22px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 18px 0;
   border-bottom: 1px solid var(--rule);
   cursor: pointer;
   transition: color 0.15s ease;
@@ -311,26 +313,38 @@
   color: var(--ink);
 }
 .blog-post-row .pr-title {
+  flex: 0 0 auto;
   font-family: var(--display);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.2;
   letter-spacing: -0.015em;
   color: var(--ink-2);
   font-weight: 500;
-  display: block;
+}
+.blog-post-row .pr-dek {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--mute);
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .blog-post-row .pr-meta-row {
-  margin-top: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
   font-family: var(--ui);
   font-size: 17px;
   font-weight: 300;
   color: var(--mute);
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .blog-post-row .pr-meta-row .sep {
   color: var(--mute-2);
-  margin: 0 8px;
 }
 
 /* ---------- colophon ---------- */
