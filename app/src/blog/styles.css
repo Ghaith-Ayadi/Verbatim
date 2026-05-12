@@ -336,7 +336,7 @@
   flex: 0 0 auto;
   margin-left: auto;
   font-family: var(--ui);
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 300;
   color: var(--mute);
   line-height: 1.45;
@@ -722,19 +722,32 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 760px) {
-  .blog-masthead { padding: 20px 22px; }
-  .blog-hero { padding: 56px 22px 32px; }
-  .blog-hero h1 { font-size: 56px; }
+  .blog-topbar { padding: 0 22px; }
+  .blog-hero { padding: 48px 22px 32px; }
+  .blog-hero .manifesto { font-size: 26px; }
   .blog-tabs { padding: 0 22px; gap: 22px; height: 56px; }
   .blog-tabs .feed-mode { display: none; }
   .blog-col-head { padding: 36px 22px 24px; grid-template-columns: 1fr; gap: 16px; }
   .blog-col-head .col-stat { text-align: left; }
   .blog-feed { padding: 0 22px 80px; }
-  .blog-post-row { grid-template-columns: 1fr; gap: 6px; padding: 18px 0; }
-  .blog-post-row .pr-date { font-size: 10px; text-align: left; }
+  /* Three-line post row: title / dek / meta */
+  .blog-post-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 16px 0;
+  }
   .blog-post-row .pr-title { font-size: 19px; }
-  .blog-post-row .pr-title .pr-dek { display: none; }
-  .blog-post-row.featured .pr-title { font-size: 28px; }
+  .blog-post-row .pr-dek {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 15px;
+  }
+  .blog-post-row .pr-meta-row {
+    margin-left: 0;
+    text-align: left;
+  }
   .blog-article { padding: 56px 22px 48px; }
   .blog-reader-bar { padding: 14px 22px; }
   .blog-prose { font-size: 18px; }
